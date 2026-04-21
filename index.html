@@ -3445,9 +3445,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const draftKey = DRAFT_STORAGE_KEY + LOGGED_IN_USER; 
             const savedDraft = JSON.parse(localStorage.getItem(draftKey)); 
             const submittedLogs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, dStr) && x.employee === LOGGED_IN_USER && !x.isDraft);
-            const draft = (savedDraft && isSameDate(savedDraft.date, dStr)) ? savedDraft : null; 
-            const lType = dataToLoad.leaveCategory || dataToLoad.leaveType; // ดึงค่ารูปแบบ (Full/Hourly)
-            const lCat = dataToLoad.leaveType; // ดึงชื่อประเภทการลา
+            const draft = (savedDraft && isSameDate(savedDraft.date, dStr)) ? savedDraft : null;
+
+            // ประกาศ dataToLoad ก่อนนำไปใช้
+            let dataToLoad = submittedLogs[0] || draft;
             
             let allTasks = [];
             // 1. ใส่ Draft tasks เข้าไปก่อน (ปะป้ายว่ายังไม่ส่ง)
@@ -3463,13 +3464,12 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 }); 
             }
 
-            let dataToLoad = submittedLogs[0] || draft;
             document.getElementById('logForm').reset(); 
             document.getElementById('date').value = dStr; 
             document.getElementById('log-table-body').innerHTML = ''; 
             document.querySelectorAll('[id^=log-card-]').forEach(el=>el.remove()); 
-            document.getElementById('leave_type').value = (lType === 'Full' || lType === 'Hourly') ? lType : '';
-            document.getElementById('leave_category').value = lCat || "";
+            document.getElementById('leave_type').value = '';
+            document.getElementById('leave_category').value = '';
             totalRows = 0; 
 
             if (allTasks.length > 0) { 
