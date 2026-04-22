@@ -2030,6 +2030,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             
             flatpickr("#date", { dateFormat: "d/m/Y", locale: "th", disableMobile: "true",
                 onChange: async function(selectedDates, dateStr) { 
+                    // ★ รีเซ็ต flag เมื่อเปลี่ยนวันที่ใหม่
+                    window._draftLoadedForDate = null;
                     const dateInput = document.getElementById('date');
                     if(dateInput) dateInput.value = dateStr;
                     let hasData = false;
@@ -3539,20 +3541,48 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const res = await fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(d)}); const result = await res.json(); 
                 if(result.result !== 'success') throw new Error("Server Error"); 
                 if(_isEditing) { try { const uaMap = JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); uaMap[LOGGED_IN_USER+'|'+d.date] = new Date().toISOString(); localStorage.setItem(UPDATED_AT_MAP_KEY, JSON.stringify(uaMap)); } catch(e2){} }
-                deleteDraftForDate(d.date);
+                // ★ ลบ draft เฉพาะเมื่อ draft ถูก load เข้าฟอร์มแล้วเท่านั้น
+                // ถ้าผู้ใช้คีย์ข้อมูลใหม่โดยไม่ได้ load draft → คง draft เดิมไว้
+                if (window._draftLoadedForDate === d.date) {
+                    deleteDraftForDate(d.date);
+                    window._draftLoadedForDate = null;
+                }
                 
                 const optimisticEntry = Object.assign({}, d, { id: (result && result.id) ? result.id : ('local_' + Date.now()) });
-                SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !(isSameDate(x.date, d.date) && x.employee === LOGGED_IN_USER && x.isDraft));
+                // ★ ลบ draft entry ใน memory เฉพาะเมื่อ draft ถูก load เข้าฟอร์มแล้ว
+                if (!getDraftForDate(d.date)) {
+                    SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !(isSameDate(x.date, d.date) && x.employee === LOGGED_IN_USER && x.isDraft));
+                }
                 if (!SERVER_HISTORY_DB.some(x => x.id === optimisticEntry.id)) SERVER_HISTORY_DB.push(optimisticEntry);
                 try { renderCalendar(); } catch(er) {}
                 try { const sv = document.getElementById('user-summary-view'); if (sv && !sv.classList.contains('hidden')) renderUserSummary(); } catch(er) {}
                 try { checkDateStatus(d.date); } catch(er) {}
                 toggleLoading(false);
-                LAST_SUBMITTED_DATE = d.date; showModal('exportModal'); document.getElementById('logForm').reset(); document.getElementById('log-table-body').innerHTML=''; document.querySelectorAll('[id^=log-card-]').forEach(el=>el.remove()); totalRows=0; addTableRows(ROWS_TO_ADD_BATCH); updateTotalDuration();
+                LAST_SUBMITTED_DATE = d.date; showModal('exportModal'); resetLogForm();
                 
                 fetchHistoryFromServer(true);
             } catch(e){ toggleLoading(false); showMessage('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + e.message,'error'); } 
         } 
+
+        // ★ Helper: รีเซ็ตหน้าบันทึกงานกลับสู่ค่าเริ่มต้น
+        function resetLogForm() {
+            document.getElementById('logForm').reset();
+            document.getElementById('log-table-body').innerHTML = '';
+            document.querySelectorAll('[id^=log-card-]').forEach(el => el.remove());
+            totalRows = 0;
+            addTableRows(ROWS_TO_ADD_BATCH);
+            if (typeof updateTotalDuration === 'function') updateTotalDuration();
+            // clear flatpickr วันที่
+            const dateEl = document.getElementById('date');
+            if (dateEl && dateEl._flatpickr) dateEl._flatpickr.clear();
+            else if (dateEl) dateEl.value = '';
+            // ซ่อน status badge
+            const statusEl = document.getElementById('date-status-display');
+            if (statusEl) statusEl.classList.add('hidden');
+            // reset flags
+            window._draftLoadedForDate = null;
+            window.EDITING_LOG_ID = null;
+        }
 
         function saveDraft() {
             const t=[]; 
@@ -3606,12 +3636,37 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 return showMessage('กรุณาเลือกวันที่ก่อนบันทึกร่าง', 'warning');
             }
 
+            // ★ ป้องกัน overwrite draft เดิม ถ้าฟอร์มยังไม่ได้ load draft ของวันนั้น
+            const _existingDraft = getDraftForDate(d.date);
+            if (_existingDraft && (_existingDraft.tasks || []).length > 0 && window._draftLoadedForDate !== d.date) {
+                showConfirm({
+                    title: '⚠️ มีแบบร่างอยู่แล้ว',
+                    message: `มีแบบร่างวันที่ ${d.date} บันทึกไว้ ${_existingDraft.tasks.length} รายการ\nการบันทึกนี้จะแทนที่แบบร่างเดิมทั้งหมด\n\nต้องการดำเนินการต่อหรือไม่?`,
+                    type: 'danger',
+                    okText: 'แทนที่แบบร่างเดิม',
+                    cancelText: 'ยกเลิก'
+                }).then(ok => {
+                    if (ok) {
+                        saveDraftForDate(d.date, d);
+                        window._draftLoadedForDate = d.date;
+                        showMessage('บันทึกฉบับร่างเรียบร้อยแล้ว');
+                        fetchHistoryFromServer();
+                        resetLogForm();
+                    }
+                });
+                return;
+            }
+
             saveDraftForDate(d.date, d);
+            window._draftLoadedForDate = d.date;
             showMessage('บันทึกฉบับร่างเรียบร้อยแล้ว'); 
-            fetchHistoryFromServer(); 
+            fetchHistoryFromServer();
+            resetLogForm();
         }
 
         function loadDraftOrPreviousLog(dStr) {
+            // ★ ติดตามว่า draft ถูก load เข้าฟอร์มแล้วสำหรับวันนี้
+            window._draftLoadedForDate = dStr;
             const submittedLogs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, dStr) && x.employee === LOGGED_IN_USER && !x.isDraft);
             const draft = getDraftForDate(dStr);
 
@@ -3953,7 +4008,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const titleEl = document.getElementById('editLogModal-title');
             if (titleEl) titleEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>แก้ไขแบบร่าง<span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date">วันที่ ${ds}</span>`;
         }
-        function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { deleteDraftForDate(ds); renderCalendar(); renderDayLogs(ds); } }); }
+        function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { deleteDraftForDate(ds); renderCalendar(); renderDayLogs(ds); const logDate = document.getElementById('date')?.value; if(logDate && isSameDate(logDate, ds)) { loadDraftOrPreviousLog(ds); checkDateStatus(ds); } } }); }
 
         // Open history modal: show cached data instantly, then fetch fresh data in background
         function openHistoryModal() {
@@ -4996,7 +5051,7 @@ container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div style="display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid #F1F5F9;flex-wrap:wrap;">
             <span style="font-size:0.72rem;color:#64748B;font-weight:600;">สัญลักษณ์ :</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #BBF7D0;display:inline-block;"></span>มีการบันทึก</span>
-            <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#92400E;"><span style="width:12px;height:12px;border-radius:3px;background:#FEF3C7;border:2px solid #F59E0B;display:inline-block;"></span>บันทึกล่วงหน้า</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#92400E;"><span style="width:12px;height:12px;border-radius:3px;background:#FEF3C7;border:2px solid #F59E0B;display:inline-block;"></span>บันทึกแล้ว</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:#FEF2F2;border:1px solid #FEE2E2;display:inline-block;"></span>ยังไม่บันทึก</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:#F8FAFC;border:1px solid #F1F5F9;display:inline-block;"></span>วันหยุด / อาทิตย์</span>
         </div>
@@ -5311,7 +5366,7 @@ ${(() => {
                     dayLogs.forEach(l=>{if(l.employee&&scopeEmployees.includes(l.employee.trim())){submitters.add(l.employee.trim()); if(l.leaveCheckbox==='Yes'||l.trainingCheckbox==='Yes'||l.fieldworkCheckbox==='Yes')leaveNames.add(l.employee.trim()); if(isFuture)futureSubmitters.add(l.employee.trim());}});
                     const missingPeople=scopeEmployees.filter(name=>!submitters.has(name));
                     statusHtml='<div class="w-full flex-1 flex flex-col gap-1 overflow-y-auto pr-1" style="max-height: 100px;">';
-                    if(isFuture&&futureSubmitters.size>0){const futureStr=Array.from(futureSubmitters).map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 rounded w-fit mb-0.5">📅 บันทึกล่วงหน้า (${futureSubmitters.size})</div><div class="text-[9px] text-amber-500 pl-1 leading-tight break-words">${futureStr}</div></div>`;}
+                    if(isFuture&&futureSubmitters.size>0){const futureStr=Array.from(futureSubmitters).map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 rounded w-fit mb-0.5">📅 บันทึกแล้ว (${futureSubmitters.size})</div><div class="text-[9px] text-amber-500 pl-1 leading-tight break-words">${futureStr}</div></div>`;}
                     if(leaveNames.size>0){const leaveListStr=Array.from(leaveNames).map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded w-fit mb-0.5">🔵 ลา/อื่นๆ (${leaveNames.size})</div><div class="text-[9px] text-blue-500 pl-1 leading-tight break-words">${leaveListStr}</div></div>`;}
                     if(!isVisualHoliday&&!isSunday&&!isFuture){if(missingPeople.length>0){const missingListStr=missingPeople.map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-red-600 bg-red-50 px-1 rounded w-fit mb-0.5">❌ ขาด (${missingPeople.length})</div><div class="text-[9px] text-red-400 pl-1 leading-tight break-words">${missingListStr}</div></div>`;}else if(scopeEmployees.length>0)statusHtml+=`<div class="mt-2 text-center"><span class="status-badge bg-green-50 text-green-600 justify-center">✅ ครบทุกคน</span></div>`;}
                     statusHtml+='</div>';
@@ -5320,7 +5375,7 @@ ${(() => {
                     let hasWork=false, totalUserMins=0;
                     dayLogs.forEach(l=>{if(l.tasks&&l.tasks.length>0){hasWork=true;l.tasks.forEach(t=>{totalUserMins+=(parseInt(t.durationHours||0)*60)+parseInt(t.durationMinutes||0);});}});
                     if(isVisualHoliday){statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">😎 ${holidayName||'วันหยุด'}</span></div>`;}
-                    else{let badges=[];if(hasWork){badges.push(`<span class="status-badge bg-green-50 text-green-600">ปฏิบัติงาน</span>`);if(totalUserMins>0){const th=Math.floor(totalUserMins/60),tm=totalUserMins%60;badges.push(`<span class="status-badge bg-gray-50 text-black-1000 border border-gray-100 text-[12px] mt-0.5">⏱️ ${th}h ${tm}m</span>`);}}const userLog=dayLogs.find(l=>l.employee&&l.employee.trim()===currentAdminSelectedUser.trim());if(userLog){if(userLog.leaveCheckbox==='Yes')badges.push(`<span class="status-badge bg-blue-50 text-blue-600">ลา</span>`);if(userLog.trainingCheckbox==='Yes')badges.push(`<span class="status-badge bg-purple-50 text-purple-600">อบรม</span>`);if(userLog.fieldworkCheckbox==='Yes')badges.push(`<span class="status-badge bg-pink-50 text-pink-600">ลงพื้นที่</span>`);}if(badges.length>0){if(isFuture)badges.unshift(`<span class="status-badge bg-amber-50 text-amber-600 border border-amber-200">📅 บันทึกล่วงหน้า</span>`);statusHtml=`<div class="flex flex-col gap-1 w-full mt-auto">${badges.join('')}</div>`;}else if(isFuture)statusHtml='';else statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">❌ ขาดส่ง</span></div>`;}
+                    else{let badges=[];if(hasWork){badges.push(`<span class="status-badge bg-green-50 text-green-600">ปฏิบัติงาน</span>`);if(totalUserMins>0){const th=Math.floor(totalUserMins/60),tm=totalUserMins%60;badges.push(`<span class="status-badge bg-gray-50 text-black-1000 border border-gray-100 text-[12px] mt-0.5">⏱️ ${th}h ${tm}m</span>`);}}const userLog=dayLogs.find(l=>l.employee&&l.employee.trim()===currentAdminSelectedUser.trim());if(userLog){if(userLog.leaveCheckbox==='Yes')badges.push(`<span class="status-badge bg-blue-50 text-blue-600">ลา</span>`);if(userLog.trainingCheckbox==='Yes')badges.push(`<span class="status-badge bg-purple-50 text-purple-600">อบรม</span>`);if(userLog.fieldworkCheckbox==='Yes')badges.push(`<span class="status-badge bg-pink-50 text-pink-600">ลงพื้นที่</span>`);}if(badges.length>0){if(isFuture)badges.unshift(`<span class="status-badge bg-amber-50 text-amber-600 border border-amber-200">📅 บันทึกแล้ว</span>`);statusHtml=`<div class="flex flex-col gap-1 w-full mt-auto">${badges.join('')}</div>`;}else if(isFuture)statusHtml='';else statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">❌ ขาดส่ง</span></div>`;}
                 }
                 c.innerHTML=`${numHtml}${statusHtml}`; c.onclick=()=>{document.querySelectorAll('#admin-calendar-grid div').forEach(x=>x.classList.remove('selected')); c.classList.add('selected'); openAdminDetailModal(ds);}; g.appendChild(c);
             }
