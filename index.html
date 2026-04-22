@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DailyTrack - Test_V3 </title>
+    <title>DailyTrack - Test_ </title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2019,7 +2019,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         document.addEventListener('DOMContentLoaded', async () => { 
             toggleLoading(true); 
             await loadConfiguration(); 
-            setInterval(() => { if(LOGGED_IN_USER) fetchHistoryFromServer(true); }, 10000);
+            setInterval(() => { if(LOGGED_IN_USER && !window._fetchInProgress) fetchHistoryFromServer(true); }, 5000);
             
             if (Object.keys(EMPLOYEE_DB).length > 0) {
                 const sessionRestored = await restoreSession();
@@ -3263,81 +3263,72 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         }
         async function fetchHistoryFromServer(silent) {
             if (!LOGGED_IN_USER) return;
+            if (window._fetchInProgress && silent) return; // ป้องกัน concurrent silent fetch
+            window._fetchInProgress = true;
 
             // 1. จัดการ UI เบื้องต้น
             const histModal = document.getElementById('historyModal');
             const isHistoryOpen = histModal && !histModal.classList.contains('hidden');
             const refreshDot = document.getElementById('history-refresh-dot');
-            const loadingOverlay = document.getElementById('loading-overlay'); // สมมติชื่อ id ของหน้าจอโหลด
+            const loadingOverlay = document.getElementById('loading-overlay');
 
             if (isHistoryOpen && refreshDot && !silent) { 
                 refreshDot.style.opacity = '1'; 
             }
 
             try {
-        // 2. Fetch ข้อมูลพร้อมตรวจสอบสถานะ Response
-        const res = await fetch(`${WEBHOOK_URL}?action=getHistory&employee=${encodeURIComponent(LOGGED_IN_USER)}`);
-        
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        
-        const d = await res.json();
-        // กรองรายการที่เพิ่งถูกลบออก เพื่อป้องกัน race condition
-        SERVER_HISTORY_DB = window._recentlyDeletedIds && window._recentlyDeletedIds.size > 0
-            ? d.filter(x => !window._recentlyDeletedIds.has(x.id))
-            : d;
+                const res = await fetch(`${WEBHOOK_URL}?action=getHistory&employee=${encodeURIComponent(LOGGED_IN_USER)}`);
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
+                const d = await res.json();
+                SERVER_HISTORY_DB = window._recentlyDeletedIds && window._recentlyDeletedIds.size > 0
+                    ? d.filter(x => !window._recentlyDeletedIds.has(x.id))
+                    : d;
 
-        // 3. Render ข้อมูลตามสิทธิ์ผู้ใช้งาน
-        if (IS_ADMIN) {
-            renderAdminCalendar();
-            renderAdminMonthlyLogs();
-        } else {
-            renderCalendar();
-            
-            // ตรวจสอบ Element ก่อน Render เพื่อป้องกัน Error
-            const summaryView = document.getElementById('user-summary-view');
-            if (summaryView && !summaryView.classList.contains('hidden')) {
-                renderUserSummary();
-            }
+                // Re-render ทุก view ที่กำลังเปิดอยู่
+                const adminView    = document.getElementById('admin-view');
+                const summaryView  = document.getElementById('user-summary-view');
+                const calView      = document.getElementById('user-view');
 
-            const adminView = document.getElementById('admin-view');
-            if (adminView && !adminView.classList.contains('hidden')) {
-                renderAdminCalendar();
-                renderAdminMonthlyLogs();
-            }
+                if (IS_ADMIN || (adminView && !adminView.classList.contains('hidden'))) {
+                    renderAdminCalendar();
+                    renderAdminMonthlyLogs();
+                }
 
-            const dateInput = document.getElementById('date');
-            if (dateInput && dateInput.value) {
-                checkDateStatus(dateInput.value);
-            }
+                if (!IS_ADMIN) {
+                    if (calView && !calView.classList.contains('hidden')) {
+                        renderCalendar();
+                    }
+                    if (summaryView && !summaryView.classList.contains('hidden')) {
+                        renderUserSummary();
+                    }
+                }
 
-            // จัดการกรณีเปิดหน้า History ค้างไว้
-            if (isHistoryOpen && typeof _historySelectedDay !== 'undefined' && _historySelectedDay) {
-                if (typeof renderDayLogs === 'function') renderDayLogs(_historySelectedDay);
-                
-                // คืนค่าสี Highlight บนปฏิทิน
-                document.querySelectorAll('#calendar-grid > div[data-ds]').forEach(x => {
-                    x._selected = (x.dataset.ds === _historySelectedDay);
-                    x.style.outline = x._selected ? '3px solid #3988D4' : '';
-                    x.style.outlineOffset = x._selected ? '2px' : '';
-                });
-            }
+                const dateInput = document.getElementById('date');
+                if (dateInput && dateInput.value) checkDateStatus(dateInput.value);
 
-            if (!silent && typeof checkAndShowDraftNotif === 'function') {
-                checkAndShowDraftNotif();
+                if (isHistoryOpen && typeof _historySelectedDay !== 'undefined' && _historySelectedDay) {
+                    if (typeof renderDayLogs === 'function') renderDayLogs(_historySelectedDay);
+                    document.querySelectorAll('#calendar-grid > div[data-ds]').forEach(x => {
+                        x._selected = (x.dataset.ds === _historySelectedDay);
+                        x.style.outline = x._selected ? '3px solid #3988D4' : '';
+                        x.style.outlineOffset = x._selected ? '2px' : '';
+                    });
+                }
+
+                if (!silent && typeof checkAndShowDraftNotif === 'function') {
+                    checkAndShowDraftNotif();
+                }
+            } catch (e) {
+                console.error("Fetch history error:", e);
+                if (!silent && typeof showMessage === 'function') {
+                    showMessage('❌ ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                }
+            } finally {
+                window._fetchInProgress = false;
+                if (refreshDot) refreshDot.style.opacity = '0';
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
             }
         }
-    } catch (e) {
-        console.error("Fetch history error:", e);
-        // แจ้งเตือนผู้ใช้หากไม่ใช่โหมดทำงานเบื้องหลัง (silent)
-        if (!silent && typeof showMessage === 'function') {
-            showMessage('❌ ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
-        }
-    } finally {
-        // 4. สำคัญมาก: ปิดสถานะการโหลดทุกกรณีเพื่อไม่ให้เว็บค้าง
-        if (refreshDot) refreshDot.style.opacity = '0';
-        if (loadingOverlay) loadingOverlay.style.display = 'none'; 
-    }
-}
 
         let _draftNotifShown = false; // แสดงครั้งเดียวต่อ session
         function checkAndShowDraftNotif() {
@@ -4077,8 +4068,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 renderCalendar();
                 renderDayLogs(ds);
                 showMessage('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว', 'success');
-                // sync กับ server ใน background
-                setTimeout(() => fetchHistoryFromServer(true), 3000);
+                // sync กับ server ทันที
+                fetchHistoryFromServer(true);
             } catch(e) {
                 showMessage('เกิดข้อผิดพลาดในการลบ: ' + e.message, 'error');
             } finally {
@@ -4694,8 +4685,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         renderDayLogs(ds);
                         if(IS_ADMIN) { renderAdminCalendar(); renderAdminMonthlyLogs(); } else { renderCalendar(); }
                         showMessage("ลบข้อมูลเรียบร้อยแล้ว");
-                        // sync กับ server ใน background - _recentlyDeletedIds จะกรอง id นี้ออกอัตโนมัติ
-                        setTimeout(() => fetchHistoryFromServer(true), 3000);
+                        // sync กับ server ทันที
+                        fetchHistoryFromServer(true);
                     } else throw new Error("ลบไม่สำเร็จ");
                 } catch(e) {
                     showMessage("เกิดข้อผิดพลาดในการลบ: " + e.message, "error");
