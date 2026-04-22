@@ -3731,6 +3731,12 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     .filter(x => x.employee === LOGGED_IN_USER && !x.isDraft)
                     .map(x => x.date)
             );
+            const futureDates = new Set(
+                SERVER_HISTORY_DB
+                    .filter(x => x.employee === LOGGED_IN_USER && !x.isDraft && x.date)
+                    .map(x => x.date)
+                    .filter(d => { try { const p=d.split('/'); const yy=parseInt(p[2])>2400?parseInt(p[2])-543:parseInt(p[2]); return new Date(yy,parseInt(p[1])-1,parseInt(p[0])) > new Date(new Date().setHours(0,0,0,0)); } catch(e){return false;} })
+            );
 
             // empty cells
             for(let i=0;i<d1;i++) {
@@ -3744,6 +3750,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const isSunday=day.getDay()===0;
                 const holidayName=GLOBAL_HOLIDAYS[ds];
                 const hasSubmittedLog=submittedDates.has(ds);
+                const isFutureRecorded=futureDates.has(ds);
                 const isDraftDay = draftDateSet.has(ds);
 
                 if(holidayName) holidays.push({ ds, day: i, dow: ['อา','จ','อ','พ','พฤ','ศ','ส'][day.getDay()], name: holidayName });
@@ -3752,11 +3759,17 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 c.style.cssText = `width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;cursor:pointer;font-size:0.78rem;font-weight:600;transition:transform 0.15s;position:relative;flex-shrink:0;`;
 
                 // Styling based on state
-                if(hasSubmittedLog) {
+                if(hasSubmittedLog && !isFutureRecorded) {
                     c.style.background = 'transparent';
                     c.style.color = '#16A34A';
                     c.style.fontWeight = '700';
                     c.style.boxShadow = 'none';
+                } else if(isFutureRecorded) {
+                    c.style.background = '#FEF3C7';
+                    c.style.color = '#92400E';
+                    c.style.fontWeight = '700';
+                    c.style.border = '2px solid #F59E0B';
+                    c.style.boxShadow = '0 2px 6px rgba(245,158,11,0.25)';
                 } else if(isDraftDay) {
                     c.style.background = '#FFF3CD';
                     c.style.color = '#856404';
@@ -4790,10 +4803,11 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const hasLog = !!dailyHours[dateStr] || dayLogs.some(l =>
                     l.leaveCheckbox === 'Yes' || l.trainingCheckbox === 'Yes' || l.fieldworkCheckbox === 'Yes'
                 );
+                const isFutureRecorded = isFut && hasLog;
                 const infoLines = [];
-                if (!isSun && !isHol && !isFut && dayLogs.length > 0) {
-                    // ชั่วโมงทำงาน
-                    if (mins > 0) {
+                if (!isSun && !isHol && dayLogs.length > 0) {
+                    // ชั่วโมงทำงาน (เฉพาะวันปกติ ไม่ใช่อนาคต)
+                    if (!isFut && mins > 0) {
                         const hStr = h > 0 ? `${h} ชม.` : '';
                         const mStr = mn > 0 ? `${mn} น.` : '';
                         infoLines.push({ text: `ทำงาน : ${[hStr, mStr].filter(Boolean).join(' ')}`, color: h >= 10 ? '#DC2626' : '#15803D', bold: true });
@@ -4804,19 +4818,19 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         if (log.trainingCheckbox === 'Yes') hasTraining = true;
                         if (log.fieldworkCheckbox === 'Yes') hasFieldwork = true;
                     });
-                    if (hasLeave)    infoLines.push({ text: 'ลา', color: '#DC2626', bold: false });
-                    if (hasTraining) infoLines.push({ text: 'อบรม', color: '#7C3AED', bold: false });
-                    if (hasFieldwork)infoLines.push({ text: 'ลงพื้นที่', color: '#DB2777', bold: false });
+                    if (hasLeave)    infoLines.push({ text: 'ลา', color: isFut ? '#92400E' : '#DC2626', bold: isFut });
+                    if (hasTraining) infoLines.push({ text: 'อบรม', color: isFut ? '#6D28D9' : '#7C3AED', bold: isFut });
+                    if (hasFieldwork)infoLines.push({ text: 'ลงพื้นที่', color: isFut ? '#9D174D' : '#DB2777', bold: isFut });
                 }
                 const cellHasLeave = dayLogs.some(l => l.leaveCheckbox === 'Yes') && (dailyHours[dateStr] || 0) === 0;
                 // พ.ย. 68 วันที่ 1-8 ไม่นับเป็นวันทำงาน → แสดงเป็นสีเทา
                 const isNovExcluded = (y === 2025 && m === 10 && d >= 1 && d <= 8);
-                calCells.push({ d, dateStr, isSun, isHol, holName, isFut, mins, h, mn, hasLog, infoLines, cellHasLeave, isNovExcluded });
+                calCells.push({ d, dateStr, isSun, isHol, holName, isFut, isFutureRecorded, mins, h, mn, hasLog, infoLines, cellHasLeave, isNovExcluded });
             }
 
             const dayCells = calCells.map(cell => {
                 if (!cell) return `<div></div>`;
-                const { d, dateStr, isSun, isHol, holName, isFut, mins, h, mn, hasLog, infoLines, cellHasLeave, isNovExcluded } = cell;
+                const { d, dateStr, isSun, isHol, holName, isFut, isFutureRecorded, mins, h, mn, hasLog, infoLines, cellHasLeave, isNovExcluded } = cell;
 
                 // กำหนด background และสีวันที่
                 let bg, dateNumCol, cellBorder;
@@ -4824,6 +4838,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     bg = 'background:#F8FAFC'; dateNumCol = '#CBD5E1'; cellBorder = '1px solid #F1F5F9';
                 } else if (isSun || isHol) {
                     bg = 'background:#F8FAFC'; dateNumCol = '#CBD5E1'; cellBorder = '1px solid #F1F5F9';
+                } else if (isFutureRecorded) {
+                    bg = 'background:linear-gradient(135deg,#FFFBEB,#FEF3C7)'; dateNumCol = '#92400E'; cellBorder = '2px solid #F59E0B';
                 } else if (isFut) {
                     bg = 'background:#F8FAFC'; dateNumCol = '#94A3B8'; cellBorder = '1px solid #F1F5F9';
                 } else if (!hasLog) {
@@ -4842,6 +4858,11 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     bodyHtml = `<span style="font-size:0.65rem;color:#CBD5E1;font-weight:600;">อา.</span>`;
                 } else if (isHol) {
                     bodyHtml = `<span style="font-size:0.6rem;color:#FCA5A5;font-weight:600;text-align:center;line-height:1.3;">${holName || '🎉'}</span>`;
+                } else if (isFutureRecorded) {
+                    bodyHtml = `<span style="font-size:0.58rem;font-weight:700;color:#B45309;line-height:1.3;">📅 ล่วงหน้า</span>`
+                        + infoLines.map(line =>
+                            `<span style="font-size:0.6rem;font-weight:700;color:${line.color};line-height:1.4;text-align:left;width:100%;display:block;">${line.text}</span>`
+                        ).join('');
                 } else if (isFut) {
                     bodyHtml = `<span style="font-size:0.6rem;color:#CBD5E1;">-</span>`;
                 } else if (!hasLog) {
@@ -4852,8 +4873,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     ).join('');
                 }
 
-                // clickable เฉพาะวันที่ไม่ใช่อนาคต และไม่ใช่ Sunday/holiday ว่าง
-                const isClickable = !isNovExcluded && !isFut && (hasLog || (!isSun && !isHol));
+                // clickable รวมวันล่วงหน้าที่บันทึกแล้ว
+                const isClickable = !isNovExcluded && (isFutureRecorded || (!isFut && (hasLog || (!isSun && !isHol))));
                 const clickAttr = isClickable
                     ? `onclick="openSummaryDayDetail('${dateStr}')" style="${bg};border-radius:14px;padding:7px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:76px;position:relative;border:${cellBorder};cursor:pointer;transition:box-shadow 0.15s,transform 0.15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''"`
                     : `style="${bg};border-radius:14px;padding:7px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:76px;position:relative;border:${cellBorder};"`;
@@ -4984,6 +5005,7 @@ container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div style="display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid #F1F5F9;flex-wrap:wrap;">
             <span style="font-size:0.72rem;color:#64748B;font-weight:600;">สัญลักษณ์ :</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:1px solid #BBF7D0;display:inline-block;"></span>มีการบันทึก</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#92400E;"><span style="width:12px;height:12px;border-radius:3px;background:#FEF3C7;border:2px solid #F59E0B;display:inline-block;"></span>บันทึกล่วงหน้า</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:#FEF2F2;border:1px solid #FEE2E2;display:inline-block;"></span>ยังไม่บันทึก</span>
             <span style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:#64748B;"><span style="width:12px;height:12px;border-radius:3px;background:#F8FAFC;border:1px solid #F1F5F9;display:inline-block;"></span>วันหยุด / อาทิตย์</span>
         </div>
@@ -5294,10 +5316,11 @@ ${(() => {
                 let dayLogs=SERVER_HISTORY_DB.filter(x=>isSameDate(x.date,ds)&&!x.isDraft);
                 if(currentAdminSelectedUser==='All'){
                     let scopeEmployees=[]; if(IS_ADMIN){scopeEmployees=Object.values(EMPLOYEE_DB).filter(e=>!e.isAdmin&&e.role!=='Admin').map(e=>e.name);}else if(IS_MANAGER||IS_SUPERVISOR){scopeEmployees=MY_SUBORDINATES.map(e=>e.name);}
-                    const submitters=new Set(), leaveNames=new Set();
-                    dayLogs.forEach(l=>{if(l.employee&&scopeEmployees.includes(l.employee.trim())){submitters.add(l.employee.trim()); if(l.leaveCheckbox==='Yes'||l.trainingCheckbox==='Yes'||l.fieldworkCheckbox==='Yes')leaveNames.add(l.employee.trim());}});
+                    const submitters=new Set(), leaveNames=new Set(), futureSubmitters=new Set();
+                    dayLogs.forEach(l=>{if(l.employee&&scopeEmployees.includes(l.employee.trim())){submitters.add(l.employee.trim()); if(l.leaveCheckbox==='Yes'||l.trainingCheckbox==='Yes'||l.fieldworkCheckbox==='Yes')leaveNames.add(l.employee.trim()); if(isFuture)futureSubmitters.add(l.employee.trim());}});
                     const missingPeople=scopeEmployees.filter(name=>!submitters.has(name));
                     statusHtml='<div class="w-full flex-1 flex flex-col gap-1 overflow-y-auto pr-1" style="max-height: 100px;">';
+                    if(isFuture&&futureSubmitters.size>0){const futureStr=Array.from(futureSubmitters).map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 rounded w-fit mb-0.5">📅 บันทึกล่วงหน้า (${futureSubmitters.size})</div><div class="text-[9px] text-amber-500 pl-1 leading-tight break-words">${futureStr}</div></div>`;}
                     if(leaveNames.size>0){const leaveListStr=Array.from(leaveNames).map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded w-fit mb-0.5">🔵 ลา/อื่นๆ (${leaveNames.size})</div><div class="text-[9px] text-blue-500 pl-1 leading-tight break-words">${leaveListStr}</div></div>`;}
                     if(!isVisualHoliday&&!isSunday&&!isFuture){if(missingPeople.length>0){const missingListStr=missingPeople.map(n=>n.split(' ')[0]).join(', ');statusHtml+=`<div class="mt-1"><div class="text-[10px] font-bold text-red-600 bg-red-50 px-1 rounded w-fit mb-0.5">❌ ขาด (${missingPeople.length})</div><div class="text-[9px] text-red-400 pl-1 leading-tight break-words">${missingListStr}</div></div>`;}else if(scopeEmployees.length>0)statusHtml+=`<div class="mt-2 text-center"><span class="status-badge bg-green-50 text-green-600 justify-center">✅ ครบทุกคน</span></div>`;}
                     statusHtml+='</div>';
@@ -5306,7 +5329,7 @@ ${(() => {
                     let hasWork=false, totalUserMins=0;
                     dayLogs.forEach(l=>{if(l.tasks&&l.tasks.length>0){hasWork=true;l.tasks.forEach(t=>{totalUserMins+=(parseInt(t.durationHours||0)*60)+parseInt(t.durationMinutes||0);});}});
                     if(isVisualHoliday){statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">😎 ${holidayName||'วันหยุด'}</span></div>`;}
-                    else{let badges=[];if(hasWork){badges.push(`<span class="status-badge bg-green-50 text-green-600">ปฏิบัติงาน</span>`);if(totalUserMins>0){const th=Math.floor(totalUserMins/60),tm=totalUserMins%60;badges.push(`<span class="status-badge bg-gray-50 text-black-1000 border border-gray-100 text-[12px] mt-0.5">⏱️ ${th}h ${tm}m</span>`);}}const userLog=dayLogs.find(l=>l.employee&&l.employee.trim()===currentAdminSelectedUser.trim());if(userLog){if(userLog.leaveCheckbox==='Yes')badges.push(`<span class="status-badge bg-blue-50 text-blue-600">ลา</span>`);if(userLog.trainingCheckbox==='Yes')badges.push(`<span class="status-badge bg-purple-50 text-purple-600">อบรม</span>`);if(userLog.fieldworkCheckbox==='Yes')badges.push(`<span class="status-badge bg-pink-50 text-pink-600">ลงพื้นที่</span>`);}if(badges.length>0)statusHtml=`<div class="flex flex-col gap-1 w-full mt-auto">${badges.join('')}</div>`;else if(isFuture)statusHtml='';else statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">❌ ขาดส่ง</span></div>`;}
+                    else{let badges=[];if(hasWork){badges.push(`<span class="status-badge bg-green-50 text-green-600">ปฏิบัติงาน</span>`);if(totalUserMins>0){const th=Math.floor(totalUserMins/60),tm=totalUserMins%60;badges.push(`<span class="status-badge bg-gray-50 text-black-1000 border border-gray-100 text-[12px] mt-0.5">⏱️ ${th}h ${tm}m</span>`);}}const userLog=dayLogs.find(l=>l.employee&&l.employee.trim()===currentAdminSelectedUser.trim());if(userLog){if(userLog.leaveCheckbox==='Yes')badges.push(`<span class="status-badge bg-blue-50 text-blue-600">ลา</span>`);if(userLog.trainingCheckbox==='Yes')badges.push(`<span class="status-badge bg-purple-50 text-purple-600">อบรม</span>`);if(userLog.fieldworkCheckbox==='Yes')badges.push(`<span class="status-badge bg-pink-50 text-pink-600">ลงพื้นที่</span>`);}if(badges.length>0){if(isFuture)badges.unshift(`<span class="status-badge bg-amber-50 text-amber-600 border border-amber-200">📅 บันทึกล่วงหน้า</span>`);statusHtml=`<div class="flex flex-col gap-1 w-full mt-auto">${badges.join('')}</div>`;}else if(isFuture)statusHtml='';else statusHtml=`<div class="mt-auto w-full"><span class="status-badge bg-red-50 text-red-500">❌ ขาดส่ง</span></div>`;}
                 }
                 c.innerHTML=`${numHtml}${statusHtml}`; c.onclick=()=>{document.querySelectorAll('#admin-calendar-grid div').forEach(x=>x.classList.remove('selected')); c.classList.add('selected'); openAdminDetailModal(ds);}; g.appendChild(c);
             }
