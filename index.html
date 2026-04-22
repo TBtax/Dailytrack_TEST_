@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DailyTrack - Test </title>
+    <title>DailyTrack - Test_V3 </title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -274,14 +274,15 @@
            ═══════════════════════════════════════════════════════ */
         .log-card-row {
             background: #ffffff;
-            border: 1px solid #E8F5E9;
-            border-radius: 24px;
+            border: none;
+            border-radius: 16px;
             overflow: hidden;
             transition: box-shadow 0.2s, border-color 0.2s;
             margin-bottom: 12px;
+            box-shadow: 0 4px 16px rgba(77,168,102,0.13), 0 1.5px 4px rgba(57,136,212,0.07);
         }
         .log-card-row:hover {
-            box-shadow: 0 4px 20px rgba(77,168,102,0.10);
+            box-shadow: 0 8px 28px rgba(77,168,102,0.18), 0 2px 8px rgba(57,136,212,0.10);
             border-color: #b2dfdb;
         }
         .log-card-top {
@@ -290,8 +291,8 @@
             gap: 8px;
             align-items: center;
             padding: 10px 12px;
-            background: linear-gradient(90deg,#F8FFF9 0%,#F0FAFF 100%);
-            border-radius: 24px 24px 0 0;
+            background: transparent;
+            border-radius: 0px;
             overflow: visible;
             position: relative;
             z-index: 1;
@@ -367,7 +368,7 @@
             border-radius: 10px;
             padding: 7px 10px;
             resize: none;
-            height: 56px;
+            height: 82px;
             background: #FAFAFA;
             color: #374151;
             transition: border-color 0.2s, background 0.2s;
@@ -386,6 +387,8 @@
             overflow: visible;
             padding: 4px 2px;
         }
+        /* Divider handled via JS separator element */
+
 
         /* Summary footer bar */
         .log-footer-bar {
@@ -399,6 +402,16 @@
         }
 
 
+
+        /* Empty card rows (no data entered yet) */
+        .log-card-row.is-empty {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .log-card-row.is-empty:hover {
+            background: rgba(255,255,255,0.6) !important;
+            box-shadow: 0 2px 8px rgba(77,168,102,0.08) !important;
+        }
         /* Date input inside gradient header */
         #date { color: white !important; }
         #date::placeholder { color: rgba(255,255,255,0.6) !important; }
@@ -431,7 +444,7 @@
 
     </style>
     <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center z-[9999]">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:18px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:18px;background:#ffffff;padding:32px 40px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
             <div class="ld-dots">
                 <div class="ld-dot"></div>
                 <div class="ld-dot"></div>
@@ -439,10 +452,47 @@
                 <div class="ld-dot"></div>
                 <div class="ld-dot"></div>
             </div>
+            <div style="font-family:'Prompt',sans-serif;font-size:0.95rem;font-weight:600;color:#475569;letter-spacing:0.02em;">กำลังโหลดข้อมูล...</div>
             <div id="loading-overlay-msg" style="font-family:'Prompt',sans-serif;font-size:0.95rem;font-weight:600;color:#475569;letter-spacing:0.02em;"></div>
         </div>
     </div>
 
+
+    <!-- ═══════════════════════════════════════════════════
+         EDIT LOG POPUP MODAL
+         ═══════════════════════════════════════════════════ -->
+    <div id="editLogModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-3">
+        <div class="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" onclick="closeEditLogModal()"></div>
+        <div class="relative z-10 bg-white w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden" style="border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.9);">
+            <!-- Header -->
+            <div id="editLogModal-header" style="background:#F0FDF4;padding:18px 20px 16px;border-radius:28px 28px 0 0;flex-shrink:0;border-bottom:1.5px solid #BBF7D0;">
+                <div class="flex items-center justify-between gap-3">
+                    <div id="editLogModal-title" style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;color:#166534;flex:1;min-width:0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        แก้ไขรายการบันทึกงาน
+                        <span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date"></span>
+                    </div>
+                    <button id="editLogModal-close-btn" onclick="closeEditLogModal()" style="width:34px;height:34px;flex-shrink:0;border-radius:50%;background:#FEE2E2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#EF4444;transition:all 0.2s;" onmouseover="this.style.background='#FECACA';this.style.color='#DC2626'" onmouseout="this.style.background='#FEE2E2';this.style.color='#EF4444'">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Body (scrollable) -->
+            <div id="editLogModal-body" class="flex-1 overflow-y-auto p-5 space-y-4 custom-scroll" style="background:#F8FAFC;">
+                <!-- filled by JS -->
+            </div>
+            <!-- Footer -->
+            <div style="background:white;padding:16px 20px;border-top:1px solid #F1F5F9;border-radius:0 0 28px 28px;flex-shrink:0;" class="flex gap-3 justify-end">
+                <button onclick="closeEditLogModal()" style="padding:12px 24px;border-radius:16px;border:1.5px solid #E2E8F0;background:white;color:#64748B;font-weight:600;font-size:0.9rem;cursor:pointer;transition:all 0.2s;font-family:inherit;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='white'">
+                    ยกเลิก
+                </button>
+                <button id="editLogModal-save-btn" onclick="saveEditedLogModal()" style="padding:12px 28px;border-radius:16px;border:none;background:#4DA866;color:white;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(77,168,102,0.25);font-family:inherit;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    บันทึกการแก้ไข
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Alert Modal -->
     <div id="alertModal" class="fixed inset-0 z-[600] hidden flex items-center justify-center p-4">
@@ -951,9 +1001,11 @@ header h2 { color: var(--txt) !important; }
 div[style*="background:#EDF7EF"] { background: #EAF8F1 !important; }
 
 /* ── 7. Log card rows ─────────────────────────────────────── */
-.log-card-row { border-color: var(--border) !important; background: var(--card) !important; }
-.log-card-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important; border-color: #96D8B4 !important; }
-.log-card-top { background: #F2FAF6 !important; }
+.log-card-row { border-color: var(--border) !important; background: var(--card) !important; box-shadow: 0 4px 16px rgba(77,168,102,0.13), 0 1.5px 4px rgba(57,136,212,0.07) !important; border-radius: 16px !important; }
+.log-card-row.is-empty { background: transparent !important; box-shadow: none !important; border: none !important; }
+.log-card-row.is-empty:hover { background: rgba(255,255,255,0.6) !important; box-shadow: 0 2px 8px rgba(77,168,102,0.08) !important; }
+.log-card-row:hover { box-shadow: 0 8px 28px rgba(77,168,102,0.18), 0 2px 8px rgba(57,136,212,0.10) !important; border-color: #96D8B4 !important; }
+.log-card-top { background: transparent !important; }
 .log-row-num { background: linear-gradient(135deg, var(--pri), var(--acc)) !important; }
 .log-delete-btn { color: #C0CCCA !important; }
 .log-delete-btn:hover { background: #FDF0F0 !important; color: #C94F4F !important; }
@@ -1885,6 +1937,72 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         const MIN_CALENDAR_DATE = new Date(2025, 10, 1); // พฤศจิกายน 2025 — เก่ากว่านี้ไม่ให้เลือก
         const DRAFT_STORAGE_KEY = 'dailytrack_draft_', SESSION_STORAGE_KEY = 'dailytrack_session', ROWS_TO_ADD_BATCH = 5, UPDATED_AT_MAP_KEY = 'dailytrack_updated_at_map';
         let _historySelectedDay = null; // tracks selected day in historyModal
+        window._recentlyDeletedIds = new Set();
+
+        // ───── Draft Storage Helpers (รองรับหลาย draft ต่อ 1 วัน) ─────
+
+        // Normalize date key เพื่อแก้ปัญหา flatpickr ผลิต "22/04/2026" (zero-padded)
+        // แต่ formatDate() ผลิต "22/4/2026" (ไม่มี zero) — ทำให้หา draft ไม่เจอ
+        function _normalizeDateKey(date) {
+            if (!date) return date;
+            const parts = String(date).split('/');
+            if (parts.length !== 3) return date;
+            return `${parseInt(parts[0])}/${parseInt(parts[1])}/${parseInt(parts[2])}`;
+        }
+
+        function _getDraftMap() {
+            try {
+                const raw = localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER);
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return {};
+                // Migrate: old single-draft format มี property "date" ระดับบน
+                if (typeof parsed.date === 'string') {
+                    const normKey = _normalizeDateKey(parsed.date);
+                    return { [normKey]: { ...parsed, date: normKey } };
+                }
+                // Normalize all existing keys (migration จาก key แบบ zero-padded)
+                const normalized = {};
+                Object.entries(parsed).forEach(([k, v]) => {
+                    const nk = _normalizeDateKey(k);
+                    normalized[nk] = { ...v, date: nk };
+                });
+                return normalized;
+            } catch(e) { return {}; }
+        }
+        function _saveDraftMap(map) {
+            const keys = Object.keys(map);
+            if (keys.length === 0) {
+                localStorage.removeItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER);
+            } else {
+                localStorage.setItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER, JSON.stringify(map));
+            }
+        }
+        function getDraftForDate(date) {
+            if (!date) return null;
+            return _getDraftMap()[_normalizeDateKey(date)] || null;
+        }
+        function saveDraftForDate(date, draftData) {
+            if (!date) return;
+            const normDate = _normalizeDateKey(date);
+            const map = _getDraftMap();
+            map[normDate] = { ...draftData, date: normDate };
+            _saveDraftMap(map);
+        }
+        function deleteDraftForDate(date) {
+            if (!date) return;
+            const map = _getDraftMap();
+            delete map[_normalizeDateKey(date)];
+            _saveDraftMap(map);
+        }
+        function getAnyDraft() {
+            const map = _getDraftMap();
+            const keys = Object.keys(map);
+            return keys.length > 0 ? map[keys[0]] : null;
+        }
+        function getAllDraftDates() {
+            return Object.keys(_getDraftMap());
+        } // ป้องกัน race condition หลังลบรายการ
         let GLOBAL_REQUESTER_OPTIONS = [""], GLOBAL_AGENT_OPTIONS = [""], GLOBAL_TOPIC_OPTIONS = [""], GLOBAL_STATUS_OPTIONS = [""], GLOBAL_HOLIDAYS = {};
 
         document.addEventListener('DOMContentLoaded', async () => { 
@@ -1911,7 +2029,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         const keepData = await showConfirm({title:'มีข้อมูลค้างอยู่',message:"คุณมีข้อมูลที่กรอกค้างไว้\nต้องการ 'เก็บข้อมูลนี้' ไปยังวันที่ใหม่หรือไม่?\n\n[ตกลง] = เก็บข้อมูลที่พิมพ์ไว้\n[ยกเลิก] = ล้างข้อมูลเก่า",type:'info',okText:'เก็บข้อมูลไว้',cancelText:'ล้างข้อมูล'});
                         if (keepData) { checkDateStatus(dateStr); return; }
                     }
-                    checkDateStatus(dateStr); loadDraftOrPreviousLog(dateStr); 
+                    checkDateStatus(dateStr); 
                 } 
             });
 
@@ -3137,7 +3255,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         
         const d = await res.json();
-        SERVER_HISTORY_DB = d;
+        // กรองรายการที่เพิ่งถูกลบออก เพื่อป้องกัน race condition
+        SERVER_HISTORY_DB = window._recentlyDeletedIds && window._recentlyDeletedIds.size > 0
+            ? d.filter(x => !window._recentlyDeletedIds.has(x.id))
+            : d;
 
         // 3. Render ข้อมูลตามสิทธิ์ผู้ใช้งาน
         if (IS_ADMIN) {
@@ -3196,7 +3317,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         function checkAndShowDraftNotif() {
             if(_draftNotifShown) return;
             let draft = null;
-            try { draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER)); } catch(e) {}
+            try { draft = getAnyDraft(); } catch(e) {}
             if(!draft || !draft.date) return;
             _draftNotifShown = true;
             // Populate info
@@ -3226,14 +3347,14 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
 
         function viewDraftFromNotif() {
             dismissDraftNotif();
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
+            const draft = getAnyDraft();
             if(!draft) return;
             _historySelectedDay = draft.date;
             openHistoryModal();
         }
 
         async function submitDraftFromNotif() {
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
+            const draft = getAnyDraft();
             if(!draft || !draft.date) return;
             dismissDraftNotif();
             const ok = await showConfirm({title:'ส่งข้อมูล',message:'ยืนยันการส่งแบบร่างวันที่ ' + draft.date + '?',type:'primary',okText:'ส่งข้อมูล'});
@@ -3273,7 +3394,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 // ── visible card ──
                 const card = document.createElement('div');
                 card.id = `log-card-${rowNum}`;
-                card.className = 'log-card-row';
+                card.className = 'log-card-row is-empty';
                 card.innerHTML = `
                     <div class="log-card-top">
                         <div class="log-row-num">${rowNum}</div>
@@ -3313,6 +3434,26 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 initSS(`topic-select-table-${rowNum}`, { placeholder: 'เลือกหัวข้องาน' });
                 initSS(`status-select-table-${rowNum}`, { placeholder: 'เลือกสถานะ' });
                 // duration/minute selects kept as native <select> for reliable value display
+                // Watch all inputs in this card to toggle is-empty class
+                (function(num, cardEl) {
+                    function checkEmpty() {
+                        const req = document.getElementById(`requester-select-table-${num}`)?.value;
+                        const agt = document.getElementById(`agent-select-table-${num}`)?.value;
+                        const top = document.getElementById(`topic-select-table-${num}`)?.value;
+                        const sta = document.getElementById(`status-select-table-${num}`)?.value;
+                        const con = document.getElementById(`consultant-text-${num}`)?.value?.trim();
+                        const det = document.getElementById(`detail-text-${num}`)?.value?.trim();
+                        const isEmpty = !req && !agt && !top && !sta && !con && !det;
+                        cardEl.classList.toggle('is-empty', isEmpty);
+                    }
+                    cardEl.addEventListener('change', checkEmpty);
+                    cardEl.addEventListener('input', checkEmpty);
+                    // Also hook into SS custom select events
+                    setTimeout(() => {
+                        const ssWrappers = cardEl.querySelectorAll('.ss-main');
+                        ssWrappers.forEach(w => w.addEventListener('click', () => setTimeout(checkEmpty, 100)));
+                    }, 200);
+                })(rowNum, card);
             }
             updateTotalDuration();
         }
@@ -3349,17 +3490,23 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 if (!_isEditing && r.dataset.isSubmitted === 'true') return;
 
                 const i=r.id.split('-').pop(), det=document.getElementById(`detail-text-${i}`); 
-                if(det && det.value.trim()){ 
+                const _req=document.getElementById(`requester-select-table-${i}`);
+                const _agt=document.getElementById(`agent-select-table-${i}`);
+                const _top=document.getElementById(`topic-select-table-${i}`);
+                const _sta=document.getElementById(`status-select-table-${i}`);
+                const _con=document.getElementById(`consultant-text-${i}`);
+                const _hasData=(det&&det.value.trim())||(_req&&_req.value)||(_agt&&_agt.value)||(_top&&_top.value)||(_sta&&_sta.value)||(_con&&_con.value.trim());
+                if(_hasData){ 
                     t.push({ 
-                        requester:document.getElementById(`requester-select-table-${i}`).value, 
-                        agent:document.getElementById(`agent-select-table-${i}`).value, 
-                        topic:document.getElementById(`topic-select-table-${i}`).value, 
-                        detail:det.value, 
+                        requester:_req?_req.value:'', 
+                        agent:_agt?_agt.value:'', 
+                        topic:_top?_top.value:'', 
+                        detail:det?det.value:'', 
                         problem:document.getElementById(`problem-text-${i}`).value, 
                         durationHours:document.getElementById(`duration-select-${i}`).value, 
                         durationMinutes:document.getElementById(`minute-select-${i}`).value, 
-                        status:document.getElementById(`status-select-table-${i}`).value, 
-                        consultant:document.getElementById(`consultant-text-${i}`).value 
+                        status:_sta?_sta.value:'', 
+                        consultant:_con?_con.value:'' 
                     }); 
                 } 
             }); 
@@ -3375,7 +3522,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const res = await fetch(WEBHOOK_URL,{method:'POST',body:JSON.stringify(d)}); const result = await res.json(); 
                 if(result.result !== 'success') throw new Error("Server Error"); 
                 if(_isEditing) { try { const uaMap = JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); uaMap[LOGGED_IN_USER+'|'+d.date] = new Date().toISOString(); localStorage.setItem(UPDATED_AT_MAP_KEY, JSON.stringify(uaMap)); } catch(e2){} }
-                localStorage.removeItem(DRAFT_STORAGE_KEY+LOGGED_IN_USER);
+                deleteDraftForDate(d.date);
                 
                 const optimisticEntry = Object.assign({}, d, { id: (result && result.id) ? result.id : ('local_' + Date.now()) });
                 SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !(isSameDate(x.date, d.date) && x.employee === LOGGED_IN_USER && x.isDraft));
@@ -3396,18 +3543,24 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 // ★ ข้ามแถวที่ส่งเข้าระบบไปแล้ว ไม่เอามารวมเป็นร่าง ★
                 if (r.dataset.isSubmitted === 'true') return;
 
-                const i=r.id.split('-').pop(), det=document.getElementById(`detail-text-${i}`); 
-                if(det && det.value.trim()){ 
+                const i=r.id.split('-').pop(), det=document.getElementById(`detail-text-${i}`);
+                const _dr=document.getElementById(`requester-select-table-${i}`);
+                const _da=document.getElementById(`agent-select-table-${i}`);
+                const _dt=document.getElementById(`topic-select-table-${i}`);
+                const _ds=document.getElementById(`status-select-table-${i}`);
+                const _dc=document.getElementById(`consultant-text-${i}`);
+                const _anyFilled=(det&&det.value.trim())||(_dr&&_dr.value)||(_da&&_da.value)||(_dt&&_dt.value)||(_ds&&_ds.value)||(_dc&&_dc.value.trim());
+                if(_anyFilled){ 
                     t.push({ 
-                        requester:document.getElementById(`requester-select-table-${i}`).value, 
-                        agent:document.getElementById(`agent-select-table-${i}`).value, 
-                        topic:document.getElementById(`topic-select-table-${i}`).value, 
-                        detail:det.value, 
+                        requester:_dr?_dr.value:'', 
+                        agent:_da?_da.value:'', 
+                        topic:_dt?_dt.value:'', 
+                        detail:det?det.value:'', 
                         problem:document.getElementById(`problem-text-${i}`).value, 
                         durationHours:document.getElementById(`duration-select-${i}`).value, 
                         durationMinutes:document.getElementById(`minute-select-${i}`).value, 
-                        status:document.getElementById(`status-select-table-${i}`).value, 
-                        consultant:document.getElementById(`consultant-text-${i}`).value 
+                        status:_ds?_ds.value:'', 
+                        consultant:_dc?_dc.value:'' 
                     }); 
                 } 
             }); 
@@ -3429,23 +3582,21 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 fieldworkCheckbox:document.getElementById('fieldwork_checkbox').checked?'Yes':'No', 
                 fieldworkDetails:document.getElementById('fieldwork_details').value, 
                 isDraft:true 
-            }; 
+            };
 
-            // ตรวจสอบว่ามีรายการใหม่จริงๆ หรือไม่
-            if(t.length===0 && !d.notes && d.leaveCheckbox==='No' && d.trainingCheckbox==='No' && d.fieldworkCheckbox==='No') {
-                return showMessage('ไม่มีรายการใหม่ให้บันทึกร่าง (รายการที่อยู่บนจอถูกส่งไปแล้ว)', 'warning'); 
+            // อนุญาตบันทึกร่างแม้ไม่มีงาน ถ้ามีวันที่เลือกอยู่
+            if(!d.date) {
+                return showMessage('กรุณาเลือกวันที่ก่อนบันทึกร่าง', 'warning');
             }
 
-            localStorage.setItem(DRAFT_STORAGE_KEY+LOGGED_IN_USER, JSON.stringify(d)); 
+            saveDraftForDate(d.date, d);
             showMessage('บันทึกฉบับร่างเรียบร้อยแล้ว'); 
             fetchHistoryFromServer(); 
         }
 
         function loadDraftOrPreviousLog(dStr) {
-            const draftKey = DRAFT_STORAGE_KEY + LOGGED_IN_USER; 
-            const savedDraft = JSON.parse(localStorage.getItem(draftKey)); 
             const submittedLogs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, dStr) && x.employee === LOGGED_IN_USER && !x.isDraft);
-            const draft = (savedDraft && isSameDate(savedDraft.date, dStr)) ? savedDraft : null;
+            const draft = getDraftForDate(dStr);
 
             // ประกาศ dataToLoad ก่อนนำไปใช้
             let dataToLoad = submittedLogs[0] || draft;
@@ -3499,7 +3650,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         const delBtn = cardEl.querySelector('.log-delete-btn');
                         if (delBtn) delBtn.style.display = 'none'; // ซ่อนปุ่มลบ สำหรับงานที่ส่งแล้ว
                     }
-                }); 
+                });
+                // ★ เพิ่มแถวว่างต่อท้ายเสมอ เพื่อให้บันทึกร่างได้ ★
+                const hasOnlySubmitted = allTasks.every(t => t._isSubmittedRow);
+                if (hasOnlySubmitted) addTableRows(ROWS_TO_ADD_BATCH);
             } else { 
                 addTableRows(ROWS_TO_ADD_BATCH); 
             }
@@ -3543,8 +3697,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             }
             g.innerHTML='';
             const todayStr=formatDate(new Date());
-            const draft=JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY+LOGGED_IN_USER));
-            const draftDateStr = draft ? draft.date : null;
+            const draftDateSet = new Set(getAllDraftDates());
 
             // Pre-index submitted dates — O(n) once instead of O(n×days)
             const submittedDates = new Set(
@@ -3565,7 +3718,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const isSunday=day.getDay()===0;
                 const holidayName=GLOBAL_HOLIDAYS[ds];
                 const hasSubmittedLog=submittedDates.has(ds);
-                const isDraftDay = draftDateStr === ds;
+                const isDraftDay = draftDateSet.has(ds);
 
                 if(holidayName) holidays.push({ ds, day: i, dow: ['อา','จ','อ','พ','พฤ','ศ','ส'][day.getDay()], name: holidayName });
 
@@ -3654,8 +3807,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const container = document.getElementById('selected-day-logs'); container.innerHTML = '';
             const isSunday = parseDate(ds).getDay() === 0, holidayName = GLOBAL_HOLIDAYS[ds], isHoliday = isSunday || holidayName;
             let logs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, ds) && x.employee === LOGGED_IN_USER);
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
-            if(draft && isSameDate(draft.date, ds)) logs.push(draft);
+            const draft = getDraftForDate(ds);
+            if(draft) logs.push(draft);
             logs.sort((a, b) => (a.isDraft === b.isDraft) ? 0 : a.isDraft ? -1 : 1);
             // Load updatedAt map
             let uaMap = {}; try { uaMap = JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); } catch(e2){}
@@ -3673,7 +3826,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if(totalDayMins > 0) { const h=Math.floor(totalDayMins/60), m=totalDayMins%60; container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap"><div class="bg-blue-50/80 text-blue-800 px-5 py-3 rounded-2xl border border-blue-100 flex items-center gap-3 font-medium shadow-sm w-fit"><div class="bg-blue-500 text-white p-1.5 rounded-full shadow-sm flex-shrink-0"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="text-sm text-blue-700 font-semibold">รวมเวลาปฏิบัติงาน: <span class="text-xl font-bold text-blue-900 mx-1">${h}</span> ชม. <span class="text-xl font-bold text-blue-900 mx-1">${m}</span> น.</span></div>${submitAllBtn}${deleteAllBtn}</div>`; }
             else { container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap">${submitAllBtn}${deleteAllBtn}</div>`; }
             const draftBtns = `<div class="flex gap-2"><button onclick="submitSingleDraftFromHistory('${ds}')" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button><button onclick="editDraft('${ds}')" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
-            logs.forEach(i => {
+            // เก็บ array ของ logs ปัจจุบันไว้ใน window เพื่อให้ onclick ดึงได้ตาม index โดยตรง
+            window._currentDayLogs = logs;
+
+            logs.forEach((i, logIdx) => {
                 const isDraft = i.isDraft;
                 // ---- DRAFT: แสดงแต่ละ task เป็น card แยกต่างหาก ----
                 if (isDraft && i.tasks && i.tasks.length > 0) {
@@ -3685,7 +3841,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         const statusClass = t.status === 'เสร็จสิ้น' ? 'text-green-600' : (t.status === 'ดำเนินการ' ? 'text-blue-600' : 'text-gray-700');
                         // แสดงปุ่มจัดการในทุก task card
                         const taskLabel = i.tasks.length > 1 ? `<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full font-bold">รายการที่ ${tIdx+1}/${i.tasks.length}</span>` : "";
-                        const headerBtns = `<div class="flex items-center gap-2 flex-wrap">${taskLabel}${draftBtns}</div>`;
+                        const editBtn = `<button onclick="editDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button>`;
+                        const headerBtns = `<div class="flex items-center gap-2 flex-wrap">${taskLabel}<button onclick="submitDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button>${editBtn}<button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
                         card.innerHTML = `<div class="flex justify-between items-center mb-3 border-b border-yellow-200 pb-3">
                             <span class="bg-warning text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">📝 แบบร่าง (ยังไม่ส่ง)</span>
                             ${headerBtns}
@@ -3721,15 +3878,15 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 // ---- SUBMITTED: render แบบเดิม (ทุก task ใน 1 card) ----
                 const d = document.createElement('div');
                 d.className = `p-6 rounded-2xl shadow-sm border transition hover:shadow-md bg-green-50 border-green-200 mb-8`;
-                let headerHtml = `<div class="flex justify-between items-center mb-4 border-b border-green-200 pb-3"><div class="flex items-center gap-2 flex-wrap"><span class="bg-success text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">✅ บันทึกแล้ว</span><span class="text-[10px] text-gray-500">${i.timestamp ? new Date(i.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : ''}</span>${updatedAtForDay ? `<span class="text-[10px] text-blue-500 font-semibold">(แก้ไขล่าสุด: ${new Date(updatedAtForDay).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})} ${new Date(updatedAtForDay).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</span>` : ''}</div><div class="flex gap-2"><button onclick="editSubmittedLog('${i.id}', '${ds}')" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="confirmDeleteLog('${i.id}', '${ds}')" class="flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-red-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบรายการ</button></div></div>`;
+                let headerHtml = `<div class="flex justify-between items-center mb-4 border-b border-green-200 pb-3"><div class="flex items-center gap-2 flex-wrap"><span class="bg-success text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">✅ บันทึกแล้ว</span><span class="text-[10px] text-gray-500">${i.timestamp ? new Date(i.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : ''}</span>${updatedAtForDay ? `<span class="text-[10px] text-blue-500 font-semibold">(แก้ไขล่าสุด: ${new Date(updatedAtForDay).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})} ${new Date(updatedAtForDay).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</span>` : ''}</div><div class="flex gap-2"><button onclick="editSubmittedLog(${logIdx}, '${ds}', true)" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="confirmDeleteLog('${i.id}', '${ds}')" class="flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-red-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบรายการ</button></div></div>`;
                 let contentHtml = '';
                 if (i.tasks && i.tasks.length > 0) {
                     contentHtml += '<ul class="text-sm space-y-3 mb-4">';
-                    i.tasks.forEach(t => {
+                    i.tasks.forEach((t, tIdx) => {
                         const h = parseInt(t.durationHours || 0), m = parseInt(t.durationMinutes || 0);
                         const timeStr = (h > 0 || m > 0) ? h + ' ชม. ' + m + ' น.' : '0 ชม. 0 น.';
                         const statusClass = t.status === 'เสร็จสิ้น' ? 'text-green-600' : (t.status === 'ดำเนินการ' ? 'text-blue-600' : 'text-gray-700');
-                        contentHtml += `<li class="relative pl-4 border-l-2 border-green-300 mb-2"><div class="flex justify-between items-start text-xs mb-1.5"><div class="text-gray-400">ผู้แจ้งงาน: <span class="font-semibold text-gray-700">${t.requester||'-'}</span></div><div class="text-gray-400 font-semibold flex-shrink-0 pl-2">⏱️ ${timeStr}</div></div><div class="text-xs mb-1 text-gray-400">Agent: <span class="font-semibold text-green-600">${t.agent||'-'}</span></div><div class="text-xs mb-1 text-gray-400">หัวข้อ: <span class="font-bold text-gray-800">${t.topic}</span></div><div class="text-xs mb-2 text-gray-400">สถานะ: <span class="font-bold ${statusClass}">${t.status||'-'}</span></div><div class="text-xs mb-1"><span class="font-semibold text-gray-500">รายละเอียด:</span><div class="bg-white rounded-xl px-3 py-2 mt-1 whitespace-pre-wrap text-gray-800 border border-gray-100 shadow-sm text-xs">${t.detail||'-'}</div></div>${t.problem?`<div class="text-xs mt-2"><span class="font-semibold text-red-500">⚠️ ปัญหา:</span><div class="bg-red-50 rounded-xl px-3 py-2 mt-1 whitespace-pre-wrap text-red-700 border border-red-100 shadow-sm text-xs">${t.problem}</div></div>`:''}</li>`;
+                        contentHtml += `<li class="relative pl-4 border-l-2 border-green-300 mb-2"><div class="flex justify-between items-start text-xs mb-1.5"><div class="text-gray-400">ผู้แจ้งงาน: <span class="font-semibold text-gray-700">${t.requester||'-'}</span></div><div class="flex items-center gap-2 flex-shrink-0 pl-2"><span class="text-gray-400 font-semibold">⏱️ ${timeStr}</span></div></div><div class="text-xs mb-1 text-gray-400">Agent: <span class="font-semibold text-green-600">${t.agent||'-'}</span></div><div class="text-xs mb-1 text-gray-400">หัวข้อ: <span class="font-bold text-gray-800">${t.topic}</span></div><div class="text-xs mb-2 text-gray-400">สถานะ: <span class="font-bold ${statusClass}">${t.status||'-'}</span></div><div class="text-xs mb-1"><span class="font-semibold text-gray-500">รายละเอียด:</span><div class="bg-white rounded-xl px-3 py-2 mt-1 whitespace-pre-wrap text-gray-800 border border-gray-100 shadow-sm text-xs">${t.detail||'-'}</div></div>${t.problem?`<div class="text-xs mt-2"><span class="font-semibold text-red-500">⚠️ ปัญหา:</span><div class="bg-red-50 rounded-xl px-3 py-2 mt-1 whitespace-pre-wrap text-red-700 border border-red-100 shadow-sm text-xs">${t.problem}</div></div>`:''}</li>`;
                     });
                     contentHtml += '</ul>';
                 }
@@ -3745,8 +3902,28 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             });
         }
 
-        function editDraft(ds) { hideModal('historyModal'); document.getElementById('date').value = ds; loadDraftOrPreviousLog(ds); switchView('log'); }
-        function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { localStorage.removeItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER); renderCalendar(); renderDayLogs(ds); } }); }
+        function editDraft(ds) {
+            let draft = getDraftForDate(ds);
+            if (!draft) { showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error'); return; }
+            if (!draft.id) draft.id = 'draft_' + ds;
+            _editModalIsDraft = true;
+            hideModal('historyModal');
+            openEditLogModal(draft, ds);
+            // theme applied inside openEditLogModal via _applyEditModalTheme
+            const titleEl = document.getElementById('editLogModal-title');
+            if (titleEl) titleEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>แก้ไขแบบร่าง<span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date">วันที่ ${ds}</span>`;
+        }
+        function editDraftTask(ds, taskIdx) {
+            let draft = getDraftForDate(ds);
+            if (!draft) { showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error'); return; }
+            if (!draft.id) draft.id = 'draft_' + ds;
+            _editModalIsDraft = true;
+            hideModal('historyModal');
+            openEditLogModal(draft, ds, taskIdx);
+            const titleEl = document.getElementById('editLogModal-title');
+            if (titleEl) titleEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>แก้ไขแบบร่าง<span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date">วันที่ ${ds}</span>`;
+        }
+        function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { deleteDraftForDate(ds); renderCalendar(); renderDayLogs(ds); } }); }
 
         // Open history modal: show cached data instantly, then fetch fresh data in background
         function openHistoryModal() {
@@ -3771,7 +3948,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const res = await fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify(d)});
                 const result = await res.json();
                 if(result.result !== 'success') throw new Error('Server Error');
-                localStorage.removeItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER);
+                deleteDraftForDate(draft.date);
                 // Optimistic Update: อัพเดท UI ทันทีไม่รอ fetchHistory
                 const optimisticEntry = Object.assign({}, d, { id: (result && result.id) ? result.id : ('local_' + Date.now()) });
                 SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !(isSameDate(x.date, d.date) && x.employee === LOGGED_IN_USER && x.isDraft));
@@ -3785,39 +3962,84 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             } catch(e) { toggleLoading(false); showMessage('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + e.message, 'error'); }
         }
 
+        async function submitDraftTask(ds, taskIdx) {
+            const draft = getDraftForDate(ds);
+            if (!draft) return showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error');
+            const task = draft.tasks && draft.tasks[taskIdx];
+            if (!task) return showMessage('ไม่พบรายการที่ต้องการส่ง', 'error');
+            const taskDesc = task.topic || task.detail || `รายการที่ ${taskIdx+1}`;
+            const ok = await showConfirm({title:'ส่งรายการ', message:`ยืนยันการส่ง "${taskDesc}" ?`, type:'primary', okText:'ส่งข้อมูล'});
+            if (!ok) return;
+            // สร้าง draft ใหม่ที่มีเฉพาะ task นี้เพื่อส่ง
+            const singleTaskDraft = { ...draft, tasks: [task], isDraft: false };
+            // เหลือ tasks ที่ไม่ได้ส่ง → บันทึกกลับ localStorage
+            const remaining = draft.tasks.filter((_, i) => i !== taskIdx);
+            toggleLoading(true);
+            try {
+                const res = await fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify(singleTaskDraft)});
+                const result = await res.json();
+                if (result.result !== 'success') throw new Error('Server Error');
+                // อัปเดต localStorage: ถ้ายังมี task เหลือ → เก็บไว้ ถ้าไม่มีแล้ว → ลบ
+                if (remaining.length > 0) {
+                    const updatedDraft = { ...draft, tasks: remaining };
+                    saveDraftForDate(ds, updatedDraft);
+                } else {
+                    deleteDraftForDate(ds);
+                }
+                const optimistic = Object.assign({}, singleTaskDraft, { id: result.id || 'local_' + Date.now() });
+                SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !(isSameDate(x.date, ds) && x.employee === LOGGED_IN_USER && x.isDraft));
+                if (remaining.length > 0) {
+                    const updatedDraftEntry = { ...draft, tasks: remaining };
+                    SERVER_HISTORY_DB.push(updatedDraftEntry);
+                }
+                if (!SERVER_HISTORY_DB.some(x => x.id === optimistic.id)) SERVER_HISTORY_DB.push(optimistic);
+                toggleLoading(false);
+                renderCalendar();
+                renderDayLogs(ds);
+                showMessage('ส่งข้อมูลเรียบร้อยแล้ว ✅', 'success');
+                fetchHistoryFromServer(true);
+            } catch(e) { toggleLoading(false); showMessage('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+        }
+
         async function submitSingleDraftFromHistory(ds) {
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
-            if(!draft || !isSameDate(draft.date, ds)) return showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error');
+            const draft = getDraftForDate(ds);
+            if(!draft) return showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error');
             const ok = await showConfirm({title:'ส่งข้อมูล',message:'ยืนยันการส่งแบบร่างวันที่ ' + ds + '?',type:'primary',okText:'ส่งข้อมูล'});
             if(ok) await _submitDraftData(draft, ds);
         }
 
         async function submitAllDraftsFromHistory(ds) {
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
-            if(!draft || !isSameDate(draft.date, ds)) return showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error');
+            const draft = getDraftForDate(ds);
+            if(!draft) return showMessage('ไม่พบแบบร่างสำหรับวันนี้', 'error');
             const ok = await showConfirm({title:'ส่งข้อมูลทั้งหมด',message:'ยืนยันการส่งข้อมูลแบบร่างทั้งหมดของวันที่ ' + ds + '?',type:'primary',okText:'ส่งข้อมูลทั้งหมด'});
             if(ok) await _submitDraftData(draft, ds);
         }
 
         async function confirmDeleteAllLogs(ds) {
             const submittedLogs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, ds) && x.employee === LOGGED_IN_USER && !x.isDraft);
-            const draft = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER));
-            const hasDraftForDay = draft && isSameDate(draft.date, ds);
+            const draft = getDraftForDate(ds);
+            const hasDraftForDay = !!draft;
             const totalCount = submittedLogs.length + (hasDraftForDay ? 1 : 0);
             if(totalCount === 0) return showMessage('ไม่มีข้อมูลที่จะลบ', 'error');
             const ok = await showConfirm({title:'ลบข้อมูลทั้งหมด',message:`ยืนยันการลบข้อมูลทั้งหมด (${totalCount} รายการ) ของวันที่ ${ds}? ไม่สามารถกู้คืนได้`,type:'danger',okText:'ลบทั้งหมด'});
             if(!ok) return;
             document.getElementById('deleteLoadingOverlay').classList.add('show');
             try {
-                if(hasDraftForDay) localStorage.removeItem(DRAFT_STORAGE_KEY + LOGGED_IN_USER);
+                if(hasDraftForDay) deleteDraftForDate(ds);
                 for(const log of submittedLogs) {
+                    // ลงทะเบียน ID ก่อน fetch เพื่อป้องกัน race condition
+                    window._recentlyDeletedIds.add(log.id);
+                    setTimeout(() => window._recentlyDeletedIds.delete(log.id), 30000);
                     await fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify({action:'delete', id:log.id})});
                 }
                 try { const uaMap = JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); delete uaMap[LOGGED_IN_USER+'|'+ds]; localStorage.setItem(UPDATED_AT_MAP_KEY, JSON.stringify(uaMap)); } catch(e2){}
-                await fetchHistoryFromServer();
+                // อัปเดต local DB และ UI ทันที ก่อน sync กับ server
+                SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => !submittedLogs.some(l => l.id === x.id));
                 renderCalendar();
                 renderDayLogs(ds);
                 showMessage('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว', 'success');
+                // sync กับ server ใน background
+                setTimeout(() => fetchHistoryFromServer(true), 3000);
             } catch(e) {
                 showMessage('เกิดข้อผิดพลาดในการลบ: ' + e.message, 'error');
             } finally {
@@ -3825,12 +4047,370 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             }
         }
 
-        function editSubmittedLog(logId, ds) {
-            const logToEdit = SERVER_HISTORY_DB.find(log => log.id === logId);
+        // ═══════════════════════════════════════════════════
+        //  EDIT LOG POPUP MODAL — functions
+        // ═══════════════════════════════════════════════════
+        let _editModalLogId  = null;
+        let _editModalDs     = null;
+        let _editModalLogObj = null;  // เก็บ log object โดยตรง ไม่ต้อง lookup ซ้ำ
+        let _editModalIsDraft = false; // flag: กำลังแก้ไขแบบร่าง
+        let _editModalTaskIndex = null; // index ของ task ที่กำลังแก้ไข (null = ทั้งหมด)
+
+        function openEditLogModal(logObj, ds, taskIndex = null) {
+            // รับเป็น object โดยตรง ไม่ต้อง find() ซ้ำ
+            const log = logObj;
+            if (!log) { showMessage('ไม่พบข้อมูลที่ต้องการแก้ไข', 'error'); return; }
+            _editModalLogId  = log.id;
+            _editModalDs     = ds;
+            _editModalLogObj = log;
+
+            document.getElementById('editLogModal-date').textContent = `วันที่ ${ds}`;
+            const body = document.getElementById('editLogModal-body');
+            body.innerHTML = '';
+
+            const opts = (list) => list.map(i => {
+                const txt = (typeof i==='object'&&i!==null)?(i.text||i.label||i.value||i.name||''):i;
+                const val = (typeof i==='object'&&i!==null&&i.value!==undefined)?i.value:txt;
+                return `<option value="${val}">${txt}</option>`;
+            }).join('');
+
+            // ── TASK ROWS ────────────────────────────────────────
+            _editModalTaskIndex = taskIndex;
+            if (log.tasks && log.tasks.length > 0) {
+                const tasksToRender = taskIndex !== null ? [log.tasks[taskIndex]] : log.tasks;
+                const startIdx = taskIndex !== null ? taskIndex : 0;
+                tasksToRender.forEach((t, idx) => {
+                    const n = startIdx + idx + 1;
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:white;border-radius:20px;border:1px solid #E8F5E9;padding:16px;box-shadow:0 2px 8px rgba(77,168,102,0.06);';
+                    card.innerHTML = `
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">ผู้แจ้งงาน</label>
+                                <select id="em_req_${n}" class="table-input w-full" style="height:36px;border-radius:10px!important;">${opts(GLOBAL_REQUESTER_OPTIONS)}</select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">Agent</label>
+                                <select id="em_agent_${n}" class="table-input w-full" style="height:36px;border-radius:10px!important;">${opts(GLOBAL_AGENT_OPTIONS)}</select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">หัวข้องาน</label>
+                                <select id="em_topic_${n}" class="table-input w-full" style="height:36px;border-radius:10px!important;">${opts(GLOBAL_TOPIC_OPTIONS)}</select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">สถานะ</label>
+                                <select id="em_status_${n}" class="table-input w-full" style="height:36px;border-radius:10px!important;">${opts(GLOBAL_STATUS_OPTIONS)}</select>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">⏱️ ระยะเวลา</label>
+                                <div style="display:flex;gap:6px;align-items:center;">
+                                    <select id="em_dur_h_${n}" class="table-input" style="width:70px;height:36px;border-radius:10px!important;">
+                                        ${Array.from({length:9},(_,i)=>`<option value="${i}">${i}</option>`).join('')}
+                                    </select>
+                                    <span style="font-size:0.75rem;color:#6B7280;">ชม.</span>
+                                    <select id="em_dur_m_${n}" class="table-input" style="width:70px;height:36px;border-radius:10px!important;">
+                                        ${Array.from({length:12},(_,i)=>`<option value="${i*5}">${String(i*5).padStart(2,'0')}</option>`).join('')}
+                                    </select>
+                                    <span style="font-size:0.75rem;color:#6B7280;">น.</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">ที่ปรึกษา</label>
+                                <input type="text" id="em_consultant_${n}" class="table-input w-full" style="height:36px;border-radius:10px!important;" placeholder="ชื่อที่ปรึกษา (ถ้ามี)">
+                            </div>
+                        </div>
+                        <div style="margin-bottom:10px;">
+                            <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">📝 รายละเอียด</label>
+                            <textarea id="em_detail_${n}" rows="3" style="width:100%;border:1px solid #E2E8F0;border-radius:12px;padding:10px 14px;font-size:0.82rem;font-family:inherit;resize:vertical;background:white;color:#374151;" placeholder="รายละเอียดงาน..."></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;font-weight:600;color:#EF4444;display:block;margin-bottom:4px;">⚠️ ปัญหา/อุปสรรค</label>
+                            <textarea id="em_problem_${n}" rows="2" style="width:100%;border:1px solid #FEE2E2;border-radius:12px;padding:10px 14px;font-size:0.82rem;font-family:inherit;resize:vertical;background:#FFF8F8;color:#374151;" placeholder="ระบุปัญหา (ถ้ามี)"></textarea>
+                        </div>`;
+                    body.appendChild(card);
+                    // Set values
+                    document.getElementById(`em_req_${n}`).value    = t.requester||'';
+                    document.getElementById(`em_agent_${n}`).value  = t.agent||'';
+                    document.getElementById(`em_topic_${n}`).value  = t.topic||'';
+                    document.getElementById(`em_status_${n}`).value = t.status||'';
+                    document.getElementById(`em_dur_h_${n}`).value  = t.durationHours||'0';
+                    document.getElementById(`em_dur_m_${n}`).value  = t.durationMinutes||'0';
+                    document.getElementById(`em_consultant_${n}`).value = t.consultant||'';
+                    document.getElementById(`em_detail_${n}`).value  = t.detail||'';
+                    document.getElementById(`em_problem_${n}`).value = t.problem||'';
+                });
+            }
+
+            // ── LEAVE / TRAINING / FIELDWORK ──────────────────────
+            const hasExtra = log.leaveCheckbox==='Yes'||log.trainingCheckbox==='Yes'||log.fieldworkCheckbox==='Yes';
+            if (hasExtra) {
+                const extraCard = document.createElement('div');
+                extraCard.style.cssText = 'background:white;border-radius:20px;border:1px solid #E2E8F0;padding:16px;';
+                let html = `<div style="font-weight:700;color:#374151;font-size:0.9rem;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #F1F5F9;">📋 ข้อมูลเพิ่มเติม</div>`;
+                // Leave
+                if (log.leaveCheckbox==='Yes') {
+                    html += `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:0.8rem;font-weight:700;color:#3B82F6;display:block;margin-bottom:8px;">🏖️ การลา</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:0.7rem;color:#6B7280;display:block;margin-bottom:3px;">ประเภท</label>
+                                <select id="em_leave_type" class="table-input w-full" style="height:36px;border-radius:10px!important;">
+                                    <option value="">-- ไม่ลา --</option>
+                                    <option value="Full">ลาเต็มวัน</option>
+                                    <option value="Morning">ลาครึ่งวันเช้า</option>
+                                    <option value="Afternoon">ลาครึ่งวันบ่าย</option>
+                                    <option value="Hourly">ลาชั่วโมง</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem;color:#6B7280;display:block;margin-bottom:3px;">หมวดหมู่</label>
+                                <select id="em_leave_cat" class="table-input w-full" style="height:36px;border-radius:10px!important;">
+                                    <option value="">-- เลือก --</option>
+                                    <option value="ลาป่วย">ลาป่วย</option>
+                                    <option value="ลากิจ">ลากิจ</option>
+                                    <option value="ลาพักผ่อน">ลาพักผ่อน</option>
+                                    <option value="ลาคลอด/ตรวจครรภ์">ลาคลอด/ตรวจครรภ์</option>
+                                    <option value="ลาเพื่อพัฒนาความรู้">ลาเพื่อพัฒนาความรู้</option>
+                                    <option value="อื่นๆ">อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <label style="font-size:0.7rem;color:#6B7280;display:block;margin-bottom:3px;">เหตุผล</label>
+                            <input type="text" id="em_leave_details" class="table-input w-full" style="height:36px;border-radius:10px!important;" placeholder="ระบุเหตุผล">
+                        </div>
+                    </div>`;
+                }
+                // Training
+                if (log.trainingCheckbox==='Yes') {
+                    html += `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:0.8rem;font-weight:700;color:#8B5CF6;display:block;margin-bottom:8px;">📚 การอบรม</label>
+                        <input type="text" id="em_training_details" class="table-input w-full" style="height:36px;border-radius:10px!important;" placeholder="ชื่อหลักสูตร / การอบรม">
+                    </div>`;
+                }
+                // Fieldwork
+                if (log.fieldworkCheckbox==='Yes') {
+                    html += `
+                    <div>
+                        <label style="font-size:0.8rem;font-weight:700;color:#F59E0B;display:block;margin-bottom:8px;">🗺️ การลงพื้นที่</label>
+                        <input type="text" id="em_fieldwork_details" class="table-input w-full" style="height:36px;border-radius:10px!important;" placeholder="สถานที่ / รายละเอียด">
+                    </div>`;
+                }
+                html += '</div>';
+                extraCard.innerHTML = html;
+                body.appendChild(extraCard);
+
+                // Set values
+                setTimeout(() => {
+                    if (log.leaveCheckbox==='Yes') {
+                        const lt = document.getElementById('em_leave_type');
+                        const lc = document.getElementById('em_leave_cat');
+                        const ld = document.getElementById('em_leave_details');
+                        if(lt) lt.value = log.leaveType||'';
+                        if(lc) lc.value = log.leaveCategory||'';
+                        if(ld) ld.value = log.leaveDetails||'';
+                    }
+                    if (log.trainingCheckbox==='Yes') {
+                        const td = document.getElementById('em_training_details');
+                        if(td) td.value = log.trainingDetails||'';
+                    }
+                    if (log.fieldworkCheckbox==='Yes') {
+                        const fd = document.getElementById('em_fieldwork_details');
+                        if(fd) fd.value = log.fieldworkDetails||'';
+                    }
+                }, 30);
+            }
+
+            // ── NOTES & SUBSTITUTE ────────────────────────────────
+            const notesCard = document.createElement('div');
+            notesCard.style.cssText = 'background:white;border-radius:20px;border:1px solid #E2E8F0;padding:16px;';
+            notesCard.innerHTML = `
+                <div style="font-weight:700;color:#374151;font-size:0.9rem;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #F1F5F9;">🗒️ บันทึกเพิ่มเติม</div>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.75rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;">หมายเหตุ</label>
+                    <textarea id="em_notes" rows="2" style="width:100%;border:1px solid #E2E8F0;border-radius:12px;padding:10px 14px;font-size:0.85rem;font-family:inherit;resize:vertical;background:white;color:#374151;" placeholder="หมายเหตุ (ถ้ามี)">${log.notes||''}</textarea>
+                </div>
+                <input type="hidden" id="em_substitute" value="${log.substituteWorker||''}">`;
+            body.appendChild(notesCard);
+
+            // ── APPLY THEME ──────────────────────────────────────
+            _applyEditModalTheme(_editModalIsDraft);
+
+            // Show modal
+            document.getElementById('editLogModal').classList.remove('hidden');
+        }
+
+        // ── EDIT MODAL THEME ─────────────────────────────────────────────
+        function _applyEditModalTheme(isDraft) {
+            const header   = document.getElementById('editLogModal-header');
+            const titleEl  = document.getElementById('editLogModal-title');
+            const dateEl   = document.getElementById('editLogModal-date');
+            const saveBtn  = document.getElementById('editLogModal-save-btn');
+            if (!header) return;
+
+            if (isDraft) {
+                // ── Yellow / Draft ──
+                header.style.background        = '#FFFBEB';
+                header.style.borderBottomColor = '#FDE68A';
+                titleEl.style.color            = '#92400E';
+                if (dateEl) dateEl.style.color = 'inherit';
+                saveBtn.style.background       = '#F59E0B';
+                saveBtn.style.boxShadow        = '0 4px 12px rgba(245,158,11,0.28)';
+            } else {
+                // ── Green / Submitted ──
+                header.style.background        = '#F0FDF4';
+                header.style.borderBottomColor = '#BBF7D0';
+                titleEl.style.color            = '#166534';
+                if (dateEl) dateEl.style.color = 'inherit';
+                saveBtn.style.background       = '#4DA866';
+                saveBtn.style.boxShadow        = '0 4px 12px rgba(77,168,102,0.25)';
+            }
+        }
+
+        function closeEditLogModal() {
+            document.getElementById('editLogModal').classList.add('hidden');
+            _editModalLogId  = null;
+            _editModalDs     = null;
+            _editModalLogObj = null;
+            _editModalIsDraft = false;
+            _editModalTaskIndex = null;
+        }
+
+        async function saveEditedLogModal() {
+            if (!_editModalLogObj || !_editModalDs) return;
+
+            // capture ก่อน close (closeEditLogModal จะล้างตัวแปรเหล่านี้)
+            const editId  = _editModalLogObj.id;
+            const editDs  = _editModalDs;
+            const origLog = _editModalLogObj;
+            const isSavingDraft = _editModalIsDraft;
+
+            // Collect tasks — ถ้า _editModalTaskIndex ไม่เป็น null ให้อัปเดตเฉพาะ task นั้น
+            let tasks = [];
+            if (origLog.tasks && origLog.tasks.length > 0) {
+                if (_editModalTaskIndex !== null) {
+                    // copy ทุก task เดิม แล้วแทนที่เฉพาะตัวที่แก้ไข
+                    tasks = origLog.tasks.map((orig, idx) => {
+                        if (idx !== _editModalTaskIndex) return orig;
+                        const n = _editModalTaskIndex + 1;
+                        return {
+                            requester:      document.getElementById(`em_req_${n}`)?.value||'',
+                            agent:          document.getElementById(`em_agent_${n}`)?.value||'',
+                            topic:          document.getElementById(`em_topic_${n}`)?.value||'',
+                            status:         document.getElementById(`em_status_${n}`)?.value||'',
+                            durationHours:  document.getElementById(`em_dur_h_${n}`)?.value||'0',
+                            durationMinutes:document.getElementById(`em_dur_m_${n}`)?.value||'0',
+                            consultant:     document.getElementById(`em_consultant_${n}`)?.value||'',
+                            detail:         document.getElementById(`em_detail_${n}`)?.value||'',
+                            problem:        document.getElementById(`em_problem_${n}`)?.value||'',
+                        };
+                    });
+                } else {
+                    origLog.tasks.forEach((_, idx) => {
+                        const n = idx + 1;
+                        // บันทึกทุก task ไม่ว่า detail จะว่างหรือไม่ (เหมือน single-task path)
+                        const req  = document.getElementById(`em_req_${n}`)?.value||'';
+                        const agt  = document.getElementById(`em_agent_${n}`)?.value||'';
+                        const tpc  = document.getElementById(`em_topic_${n}`)?.value||'';
+                        const sts  = document.getElementById(`em_status_${n}`)?.value||'';
+                        const det  = document.getElementById(`em_detail_${n}`)?.value||'';
+                        const anyFilled = req || agt || tpc || sts || det;
+                        if (anyFilled) {
+                            tasks.push({
+                                requester:      req,
+                                agent:          agt,
+                                topic:          tpc,
+                                status:         sts,
+                                durationHours:  document.getElementById(`em_dur_h_${n}`)?.value||'0',
+                                durationMinutes:document.getElementById(`em_dur_m_${n}`)?.value||'0',
+                                consultant:     document.getElementById(`em_consultant_${n}`)?.value||'',
+                                detail:         det,
+                                problem:        document.getElementById(`em_problem_${n}`)?.value||'',
+                            });
+                        }
+                    });
+                }
+            }
+
+            const d = {
+                date:             editDs,
+                employee:         LOGGED_IN_USER,
+                employeeId:       LOGGED_IN_USER_ID,
+                tasks,
+                notes:            document.getElementById('em_notes')?.value||'',
+                substituteWorker: document.getElementById('em_substitute')?.value||'',
+                leaveCheckbox:    origLog.leaveCheckbox||'No',
+                leaveType:        origLog.leaveCheckbox==='Yes' ? (document.getElementById('em_leave_type')?.value||origLog.leaveType||'') : '',
+                leaveCategory:    origLog.leaveCheckbox==='Yes' ? (document.getElementById('em_leave_cat')?.value||origLog.leaveCategory||'') : '',
+                leaveDetails:     origLog.leaveCheckbox==='Yes' ? (document.getElementById('em_leave_details')?.value||'') : '',
+                leaveHoursAmt:    origLog.leaveHoursAmt||'',
+                trainingCheckbox: origLog.trainingCheckbox||'No',
+                trainingDetails:  origLog.trainingCheckbox==='Yes' ? (document.getElementById('em_training_details')?.value||'') : '',
+                fieldworkCheckbox:origLog.fieldworkCheckbox||'No',
+                fieldworkDetails: origLog.fieldworkCheckbox==='Yes' ? (document.getElementById('em_fieldwork_details')?.value||'') : '',
+                isDraft: isSavingDraft ? true : false,
+            };
+
+            closeEditLogModal();
+
+            // ── กรณีแก้ไขแบบร่าง: บันทึกกลับ localStorage ──────────
+            if (isSavingDraft) {
+                saveDraftForDate(d.date, d);
+                renderCalendar();
+                renderDayLogs(editDs);
+                showMessage('✅ บันทึกแบบร่างเรียบร้อยแล้ว', 'success');
+                return;
+            }
+
+            // ── กรณีแก้ไขรายการที่ส่งแล้ว: ส่งไป server ──────────────
+            toggleLoading(true, 'กำลังบันทึกการแก้ไข...');
+            try {
+                const [res] = await Promise.all([
+                    fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify(d)}),
+                    fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify({action:'delete', id:editId})})
+                ]);
+                const result = await res.json();
+                if (result.result !== 'success') throw new Error('Server Error');
+
+                // Update updatedAt
+                try { const uaMap=JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); uaMap[LOGGED_IN_USER+'|'+editDs]=new Date().toISOString(); localStorage.setItem(UPDATED_AT_MAP_KEY, JSON.stringify(uaMap)); } catch(e2){}
+
+                // Optimistic update
+                const optimistic = Object.assign({}, d, {id:(result.id||'local_'+Date.now())});
+                SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => String(x.id) !== String(editId));
+                SERVER_HISTORY_DB.push(optimistic);
+                if(IS_ADMIN){renderAdminCalendar();renderAdminMonthlyLogs();}else{renderCalendar();}
+                renderDayLogs(editDs);
+                toggleLoading(false);
+                showMessage('✅ แก้ไขข้อมูลเรียบร้อยแล้ว', 'success');
+                fetchHistoryFromServer(true);
+            } catch(e) {
+                toggleLoading(false);
+                showMessage('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            }
+        }
+
+        function editSubmittedLogTask(logIdx, ds, taskIdx) {
+            let logToEdit = (window._currentDayLogs && window._currentDayLogs[logIdx]) ? window._currentDayLogs[logIdx] : null;
             if (!logToEdit) { alert('ไม่พบข้อมูลที่ต้องการแก้ไข'); return; }
             hideModal('historyModal');
-            window.EDITING_LOG_ID = logId;
-            // ถ้าเป็น record ลา/อบรม/ลงพื้นที่ (ไม่มี tasks) → ไปหน้า quick-log
+            openEditLogModal(logToEdit, ds, taskIdx);
+        }
+        function editSubmittedLog(logIdOrIdx, ds, useIndex) {
+            // useIndex=true → ดึง log object จาก window._currentDayLogs ตาม index โดยตรง (เชื่อถือได้ 100%)
+            let logToEdit = null;
+            if (useIndex && window._currentDayLogs && window._currentDayLogs[logIdOrIdx]) {
+                logToEdit = window._currentDayLogs[logIdOrIdx];
+            }
+            // fallback: ค้นหาตาม id (สำหรับ call เก่าหรือจากที่อื่น)
+            if (!logToEdit) logToEdit = SERVER_HISTORY_DB.find(log => String(log.id) === String(logIdOrIdx));
+            if (!logToEdit) { alert('ไม่พบข้อมูลที่ต้องการแก้ไข'); return; }
+
+            // ถ้าเป็น record ลา/อบรม/ลงพื้นที่ล้วนๆ (ไม่มี tasks) → ไปหน้า quick-log เหมือนเดิม
             const isSpecialLog = (logToEdit.leaveCheckbox==='Yes'||logToEdit.trainingCheckbox==='Yes'||logToEdit.fieldworkCheckbox==='Yes') && (!logToEdit.tasks||logToEdit.tasks.length===0);
             if (isSpecialLog) {
                 switchView('quick-log');
@@ -3867,21 +4447,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 }, 150);
                 return;
             }
-            // รายการบันทึกงานประจำวัน → ไปหน้า log ปกติ
-            document.getElementById('date').value = ds; checkDateStatus(ds);
-            setTimeout(() => {
-                document.getElementById('log-table-body').innerHTML = ''; totalRows = 0;
-                if (logToEdit.tasks && logToEdit.tasks.length > 0) {
-                    addTableRows(logToEdit.tasks.length);
-                    logToEdit.tasks.forEach((task, idx) => { const rowId = idx + 1; const setVal = (id, val) => { const el = document.getElementById(id); if (el) { el.value = val || ''; if (el.tagName === 'SELECT') updateSelectColor(el); } }; setVal(`requester-select-table-${rowId}`, task.requester||''); setVal(`agent-select-table-${rowId}`, task.agent||''); setVal(`topic-select-table-${rowId}`, task.topic||''); setVal(`detail-text-${rowId}`, task.detail||''); setVal(`problem-text-${rowId}`, task.problem||''); setVal(`duration-select-${rowId}`, task.durationHours||'0'); setVal(`minute-select-${rowId}`, task.durationMinutes||'0'); setVal(`status-select-table-${rowId}`, task.status||''); setVal(`consultant-text-${rowId}`, task.consultant||''); });
-                } else { addTableRows(ROWS_TO_ADD_BATCH); }
-                document.getElementById('notes').value = logToEdit.notes || ''; document.getElementById('substitute_worker').value = logToEdit.substituteWorker || '';
-                if (logToEdit.leaveCheckbox === 'Yes' && logToEdit.leaveType) { document.getElementById('leave_type').value = logToEdit.leaveType; document.getElementById('leave_details').value = logToEdit.leaveDetails || ''; document.getElementById('leave_details').disabled = false; if(logToEdit.leaveCategory) document.getElementById('leave_category').value = logToEdit.leaveCategory; if(logToEdit.leaveType === 'Hourly' && logToEdit.leaveHoursAmt) { document.getElementById('leave_hours_amt').value = logToEdit.leaveHoursAmt; document.getElementById('leave_hours_amt').classList.remove('hidden'); } }
-                if (logToEdit.trainingCheckbox === 'Yes') { document.getElementById('training_checkbox').checked = true; document.getElementById('training_details').value = logToEdit.trainingDetails || ''; document.getElementById('training_details').disabled = false; }
-                if (logToEdit.fieldworkCheckbox === 'Yes') { document.getElementById('fieldwork_checkbox').checked = true; document.getElementById('fieldwork_details').value = logToEdit.fieldworkDetails || ''; document.getElementById('fieldwork_details').disabled = false; }
-                updateTotalDuration(); showMessage('โหลดข้อมูลสำเร็จ - แก้ไขแล้วกดบันทึกอีกครั้ง', 'info');
-            }, 100);
-            switchView('log');
+            // รายการบันทึกงานประจำวัน → เปิด popup modal แก้ไข (ส่ง object โดยตรง)
+            openEditLogModal(logToEdit, ds);
         }
 
         async function confirmDeleteLog(id, ds) {
@@ -3892,6 +4459,9 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     const res = await fetch(WEBHOOK_URL, {method: 'POST', body: JSON.stringify({action: 'delete', id: id})});
                     const result = await res.json();
                     if(result.result === 'deleted' || result.result === 'success') {
+                        // ลงทะเบียน ID ที่ลบแล้วเพื่อป้องกัน race condition กับ auto-refresh
+                        window._recentlyDeletedIds.add(id);
+                        setTimeout(() => window._recentlyDeletedIds.delete(id), 30000);
                         // ลบออกจาก local DB ทันที
                         SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => x.id !== id);
                         const remaining = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, ds) && x.employee === LOGGED_IN_USER && !x.isDraft);
@@ -3900,16 +4470,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         renderDayLogs(ds);
                         if(IS_ADMIN) { renderAdminCalendar(); renderAdminMonthlyLogs(); } else { renderCalendar(); }
                         showMessage("ลบข้อมูลเรียบร้อยแล้ว");
-                        // รอ server ประมวลผลเสร็จก่อนค่อย sync ใน background (ไม่ render ซ้ำเพื่อไม่ให้ข้อมูลกลับมา)
-                        setTimeout(async () => {
-                            await fetchHistoryFromServer(true);
-                            // render เฉพาะถ้ารายการที่ลบไม่กลับมาใน server (ป้องกัน race condition)
-                            const stillExists = SERVER_HISTORY_DB.some(x => x.id === id);
-                            if(!stillExists) {
-                                renderDayLogs(ds);
-                                if(IS_ADMIN) { renderAdminCalendar(); renderAdminMonthlyLogs(); } else { renderCalendar(); }
-                            }
-                        }, 2000);
+                        // sync กับ server ใน background - _recentlyDeletedIds จะกรอง id นี้ออกอัตโนมัติ
+                        setTimeout(() => fetchHistoryFromServer(true), 3000);
                     } else throw new Error("ลบไม่สำเร็จ");
                 } catch(e) {
                     showMessage("เกิดข้อผิดพลาดในการลบ: " + e.message, "error");
