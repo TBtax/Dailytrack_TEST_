@@ -2185,7 +2185,14 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         
         function onQLLeaveCategoryChange(sel) {
             const reasonRow = document.getElementById('ql_reason_row');
-            if(reasonRow) reasonRow.style.display = sel.value === 'ลาพักผ่อน' ? 'none' : 'flex';
+            const reasonInput = document.getElementById('ql_leave_reason');
+            if (sel.value === 'ลาพักผ่อน') {
+                if (reasonRow) reasonRow.style.display = 'flex';
+                if (reasonInput) { reasonInput.value = 'ลาพักผ่อน'; reasonInput.readOnly = true; reasonInput.style.background = '#F0FDF4'; reasonInput.style.color = '#4DA866'; reasonInput.style.fontWeight = '600'; }
+            } else {
+                if (reasonRow) reasonRow.style.display = 'flex';
+                if (reasonInput) { if (reasonInput.value === 'ลาพักผ่อน') reasonInput.value = ''; reasonInput.readOnly = false; reasonInput.style.background = ''; reasonInput.style.color = ''; reasonInput.style.fontWeight = ''; }
+            }
             updateQLDuration();
         }
 
@@ -2420,6 +2427,8 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             document.getElementById('ql_start_date').value = '';
             document.getElementById('ql_end_date').value = '';
             document.getElementById('ql_leave_reason').value = '';
+            const _rInp = document.getElementById('ql_leave_reason');
+            _rInp.readOnly = false; _rInp.style.background = ''; _rInp.style.color = ''; _rInp.style.fontWeight = '';
             document.getElementById('ql_training_checkbox').checked = false;
             document.getElementById('ql_training_details').value = '';
             document.getElementById('ql_training_details').disabled = true;
