@@ -424,8 +424,8 @@
     <!-- Loading Overlay -->
     <!-- Loading Overlay — growing dots -->
     <style>
-        #loading-overlay { position:fixed; inset:0; background:rgba(255,255,255,0.92); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:9999; }
-        #loading-overlay.hidden { display:none; }
+        #loading-overlay { position:fixed; inset:0; background:rgba(255,255,255,0.92); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; z-index:9999; }
+        #loading-overlay.is-visible { display:flex !important; }
         .ld-dots { display:flex; align-items:center; gap:10px; }
         .ld-dot {
             border-radius:50%;
@@ -443,7 +443,7 @@
 
 
     </style>
-    <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center z-[9999]">
+    <div id="loading-overlay">
         <div style="display:flex;flex-direction:column;align-items:center;gap:18px;background:#ffffff;padding:32px 40px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
             <div class="ld-dots">
                 <div class="ld-dot"></div>
@@ -452,7 +452,7 @@
                 <div class="ld-dot"></div>
                 <div class="ld-dot"></div>
             </div>
-            <div style="font-family:'Prompt',sans-serif;font-size:0.95rem;font-weight:600;color:#475569;letter-spacing:0.02em;">กำลังโหลดข้อมูล...</div>
+            <div id="loading-overlay-default-msg" style="font-family:'Prompt',sans-serif;font-size:0.95rem;font-weight:600;color:#475569;letter-spacing:0.02em;">กำลังโหลดข้อมูล...</div>
             <div id="loading-overlay-msg" style="font-family:'Prompt',sans-serif;font-size:0.95rem;font-weight:600;color:#475569;letter-spacing:0.02em;"></div>
         </div>
     </div>
@@ -487,6 +487,31 @@
                     ยกเลิก
                 </button>
                 <button id="editLogModal-save-btn" onclick="saveEditedLogModal()" style="padding:12px 28px;border-radius:16px;border:none;background:#4DA866;color:white;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(77,168,102,0.25);font-family:inherit;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    บันทึกการแก้ไข
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Special Log Modal (ลา/อบรม/ลงพื้นที่) -->
+    <div id="editSpecialLogModal" class="fixed inset-0 z-[210] hidden" style="display:none;align-items:center;justify-content:center;padding:12px;">
+        <div class="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" onclick="closeEditSpecialLogModal()"></div>
+        <div class="relative z-10 bg-white w-full" style="max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.9);">
+            <div style="background:linear-gradient(135deg,#EEF2FF,#F0FDF4);padding:18px 20px 16px;border-radius:28px 28px 0 0;flex-shrink:0;border-bottom:1.5px solid #C7D2FE;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px;color:#3730A3;flex:1;min-width:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span>แก้ไขรายการลา / อบรม / ลงพื้นที่</span>
+                    <span id="eslm-date" style="font-weight:500;font-size:0.85rem;opacity:0.7;white-space:nowrap;"></span>
+                </div>
+                <button onclick="closeEditSpecialLogModal()" style="width:34px;height:34px;flex-shrink:0;border-radius:50%;background:#FEE2E2;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#EF4444;transition:all 0.2s;" onmouseover="this.style.background='#FECACA'" onmouseout="this.style.background='#FEE2E2'">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="eslm-body" style="flex:1;overflow-y:auto;padding:20px;background:#F8FAFC;display:flex;flex-direction:column;gap:14px;"></div>
+            <div style="background:white;padding:16px 20px;border-top:1px solid #F1F5F9;border-radius:0 0 28px 28px;flex-shrink:0;display:flex;gap:12px;justify-content:flex-end;">
+                <button onclick="closeEditSpecialLogModal()" style="padding:12px 24px;border-radius:16px;border:1.5px solid #E2E8F0;background:white;color:#64748B;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:inherit;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='white'">ยกเลิก</button>
+                <button onclick="saveEditSpecialLogModal()" style="padding:12px 28px;border-radius:16px;border:none;background:linear-gradient(135deg,#4DA866,#3988D4);color:white;font-weight:700;font-size:0.9rem;cursor:pointer;box-shadow:0 4px 12px rgba(77,168,102,0.25);font-family:inherit;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
                     <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     บันทึกการแก้ไข
                 </button>
@@ -1665,26 +1690,19 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                                 <input type="text" id="ql_training_details" placeholder="ระบุหลักสูตร / ชื่อการอบรม..." class="w-full form-input-lg border-gray-200 text-gray-900" disabled>
                             </div>
                             <div id="ql_training_dates_row" class="hidden px-4 pb-4 space-y-3">
-                                <!-- วันที่/เวลาเริ่ม -->
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่เริ่ม</div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                <!-- วันที่เริ่ม และ วันที่สิ้นสุด บรรทัดเดียวกัน -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่เริ่ม</div>
                                         <input type="text" id="ql_training_start_date" class="w-full form-input-lg text-center text-gray-900 border-gray-200 text-sm" placeholder="วันที่เริ่ม" readonly>
-                                        <select id="ql_training_start_time" class="w-full form-input-lg border-gray-200 text-gray-700 text-sm" onchange="updateQLDuration()">
-                                            <option value="">-- เวลาเริ่ม --</option>
-                                        </select>
                                     </div>
-                                </div>
-                                <!-- วันที่/เวลาสิ้นสุด -->
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่สิ้นสุด</div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่สิ้นสุด</div>
                                         <input type="text" id="ql_training_end_date" class="w-full form-input-lg text-center text-gray-900 border-gray-200 text-sm" placeholder="ถึงวันที่" readonly>
-                                        <select id="ql_training_end_time" class="w-full form-input-lg border-gray-200 text-gray-700 text-sm" onchange="updateQLDuration()">
-                                            <option value="">-- เวลาสิ้นสุด --</option>
-                                        </select>
                                     </div>
                                 </div>
+                                <select id="ql_training_start_time" class="hidden"></select>
+                                <select id="ql_training_end_time" class="hidden"></select>
                                 <div id="ql_training_days_display" class="text-xs text-purple-600 font-semibold text-right"></div>
                             </div>
                         </div>
@@ -1699,26 +1717,19 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                                 <input type="text" id="ql_fieldwork_details" placeholder="ระบุสถานที่ / รายละเอียดการลงพื้นที่..." class="w-full form-input-lg border-gray-200 text-gray-900" disabled>
                             </div>
                             <div id="ql_fieldwork_dates_row" class="hidden px-4 pb-4 space-y-3">
-                                <!-- วันที่/เวลาเริ่ม -->
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่เริ่ม</div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                <!-- วันที่เริ่ม และ วันที่สิ้นสุด บรรทัดเดียวกัน -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่เริ่ม</div>
                                         <input type="text" id="ql_fieldwork_start_date" class="w-full form-input-lg text-center text-gray-900 border-gray-200 text-sm" placeholder="วันที่เริ่ม" readonly>
-                                        <select id="ql_fieldwork_start_time" class="w-full form-input-lg border-gray-200 text-gray-700 text-sm" onchange="updateQLDuration()">
-                                            <option value="">-- เวลาเริ่ม --</option>
-                                        </select>
                                     </div>
-                                </div>
-                                <!-- วันที่/เวลาสิ้นสุด -->
-                                <div>
-                                    <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่สิ้นสุด</div>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <div class="text-xs font-semibold text-gray-400 mb-1.5 ml-1">📅 วันที่สิ้นสุด</div>
                                         <input type="text" id="ql_fieldwork_end_date" class="w-full form-input-lg text-center text-gray-900 border-gray-200 text-sm" placeholder="ถึงวันที่" readonly>
-                                        <select id="ql_fieldwork_end_time" class="w-full form-input-lg border-gray-200 text-gray-700 text-sm" onchange="updateQLDuration()">
-                                            <option value="">-- เวลาสิ้นสุด --</option>
-                                        </select>
                                     </div>
                                 </div>
+                                <select id="ql_fieldwork_start_time" class="hidden"></select>
+                                <select id="ql_fieldwork_end_time" class="hidden"></select>
                                 <div id="ql_fieldwork_days_display" class="text-xs text-pink-600 font-semibold text-right"></div>
                             </div>
                         </div>
@@ -2102,11 +2113,6 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if (el.checked) {
                 detailRow.classList.remove('hidden');
                 datesRow.classList.remove('hidden');
-                buildTimeOptions('ql_training_start_time', '08:00');
-                buildTimeOptions('ql_training_end_time', '17:00');
-                // Init (or re-init) SS for time selects now that options are available
-                initSS('ql_training_start_time');
-                initSS('ql_training_end_time');
                 setTimeout(() => details.focus(), 50);
             } else {
                 details.value = '';
@@ -2129,11 +2135,6 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if (el.checked) {
                 detailRow.classList.remove('hidden');
                 datesRow.classList.remove('hidden');
-                buildTimeOptions('ql_fieldwork_start_time', '08:00');
-                buildTimeOptions('ql_fieldwork_end_time', '17:00');
-                // Init (or re-init) SS for time selects now that options are available
-                initSS('ql_fieldwork_start_time');
-                initSS('ql_fieldwork_end_time');
                 setTimeout(() => details.focus(), 50);
             } else {
                 details.value = '';
@@ -2325,11 +2326,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
 
             if (allDates.size === 0) return showMessage('ไม่มีวันทำงานในช่วงที่เลือก', 'warning');
 
-            toggleLoading(true);
-            let submitted = 0;
-            let errors = 0;
-
-            // ถ้าอยู่ในโหมดแก้ไข → ลบ record เดิมก่อน
+            toggleLoading(true, 'กำลังส่งข้อมูล...');
             if (window.EDITING_LOG_ID) {
                 try {
                     await fetch(WEBHOOK_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: window.EDITING_LOG_ID }) });
@@ -2344,8 +2341,21 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const fieldworkStartDate = document.getElementById('ql_fieldwork_start_date').value;
             const fieldworkEndDate = document.getElementById('ql_fieldwork_end_date').value;
 
-            for (const dateStr of [...allDates].sort()) {
-                // Determine which items apply to this date
+            // รวบรวม field values ก่อน loop
+            const notesVal = document.getElementById('ql_notes').value;
+            const substituteWorkerVal = document.getElementById('ql_substitute_worker').value;
+            const leaveCategoryVal = document.getElementById('ql_leave_category').value;
+            const leaveReasonVal = document.getElementById('ql_leave_reason').value;
+            const leaveHoursVal = leaveType === 'Hourly' ? (document.getElementById('ql_leave_hours')?.value || '0') + ':' + String(document.getElementById('ql_leave_minutes')?.value || '0').padStart(2,'0') : '';
+            const trainingDetailsVal = document.getElementById('ql_training_details').value;
+            const trainingStartTimeVal = document.getElementById('ql_training_start_time')?.value || '';
+            const trainingEndTimeVal = document.getElementById('ql_training_end_time')?.value || '';
+            const fieldworkDetailsVal = document.getElementById('ql_fieldwork_details').value;
+            const fieldworkStartTimeVal = document.getElementById('ql_fieldwork_start_time')?.value || '';
+            const fieldworkEndTimeVal = document.getElementById('ql_fieldwork_end_time')?.value || '';
+
+            // ส่งทุกวันพร้อมกัน (parallel)
+            const sendPromises = [...allDates].sort().map(dateStr => {
                 const isLeaveDay = leaveType && leaveStartDate && leaveEndDate && parseDate(dateStr) >= parseDate(leaveStartDate) && parseDate(dateStr) <= parseDate(leaveEndDate);
                 const isTrainingDay = training && trainingStartDate && trainingEndDate && parseDate(dateStr) >= parseDate(trainingStartDate) && parseDate(dateStr) <= parseDate(trainingEndDate);
                 const isFieldworkDay = fieldwork && fieldworkStartDate && fieldworkEndDate && parseDate(dateStr) >= parseDate(fieldworkStartDate) && parseDate(dateStr) <= parseDate(fieldworkEndDate);
@@ -2355,40 +2365,43 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     employee: LOGGED_IN_USER,
                     employeeId: LOGGED_IN_USER_ID,
                     tasks: [],
-                    notes: document.getElementById('ql_notes').value,
-                    substituteWorker: document.getElementById('ql_substitute_worker').value,
+                    notes: notesVal,
+                    substituteWorker: substituteWorkerVal,
                     leaveType: isLeaveDay ? leaveType : '',
-                    leaveCategory: isLeaveDay ? document.getElementById('ql_leave_category').value : '',
-                    leaveHoursAmt: isLeaveDay && leaveType === 'Hourly' ? (document.getElementById('ql_leave_hours')?.value || '0') + ':' + String(document.getElementById('ql_leave_minutes')?.value || '0').padStart(2,'0') : '',
+                    leaveCategory: isLeaveDay ? leaveCategoryVal : '',
+                    leaveHoursAmt: isLeaveDay ? leaveHoursVal : '',
                     leaveCheckbox: isLeaveDay ? 'Yes' : 'No',
-                    leaveDetails: isLeaveDay ? document.getElementById('ql_leave_reason').value : '',
+                    leaveDetails: isLeaveDay ? leaveReasonVal : '',
                     leaveStartDate: isLeaveDay ? leaveStartDate : '',
                     leaveEndDate: isLeaveDay ? leaveEndDate : '',
                     trainingCheckbox: isTrainingDay ? 'Yes' : 'No',
-                    trainingDetails: isTrainingDay ? document.getElementById('ql_training_details').value : '',
+                    trainingDetails: isTrainingDay ? trainingDetailsVal : '',
                     trainingStartDate: isTrainingDay ? trainingStartDate : '',
-                    trainingStartTime: isTrainingDay ? (document.getElementById('ql_training_start_time')?.value || '') : '',
+                    trainingStartTime: isTrainingDay ? trainingStartTimeVal : '',
                     trainingEndDate: isTrainingDay ? trainingEndDate : '',
-                    trainingEndTime: isTrainingDay ? (document.getElementById('ql_training_end_time')?.value || '') : '',
+                    trainingEndTime: isTrainingDay ? trainingEndTimeVal : '',
                     fieldworkCheckbox: isFieldworkDay ? 'Yes' : 'No',
-                    fieldworkDetails: isFieldworkDay ? document.getElementById('ql_fieldwork_details').value : '',
+                    fieldworkDetails: isFieldworkDay ? fieldworkDetailsVal : '',
                     fieldworkStartDate: isFieldworkDay ? fieldworkStartDate : '',
-                    fieldworkStartTime: isFieldworkDay ? (document.getElementById('ql_fieldwork_start_time')?.value || '') : '',
+                    fieldworkStartTime: isFieldworkDay ? fieldworkStartTimeVal : '',
                     fieldworkEndDate: isFieldworkDay ? fieldworkEndDate : '',
-                    fieldworkEndTime: isFieldworkDay ? (document.getElementById('ql_fieldwork_end_time')?.value || '') : '',
+                    fieldworkEndTime: isFieldworkDay ? fieldworkEndTimeVal : '',
                     isDraft: false
                 };
 
-                try {
-                    const res = await fetch(WEBHOOK_URL, { method: 'POST', body: JSON.stringify(payload) });
-                    const result = await res.json();
-                    if (result.result === 'success') submitted++;
-                    else errors++;
-                } catch(e) { errors++; }
-            }
+                return fetch(WEBHOOK_URL, { method: 'POST', body: JSON.stringify(payload) })
+                    .then(r => r.json())
+                    .then(result => result.result === 'success' ? 'ok' : 'err')
+                    .catch(() => 'err');
+            });
 
-            await fetchHistoryFromServer();
+            const results = await Promise.all(sendPromises);
+            submitted = results.filter(r => r === 'ok').length;
+            errors = results.filter(r => r === 'err').length;
+
             toggleLoading(false);
+            // โหลด history แบบ background ไม่ block UI
+            fetchHistoryFromServer();
 
             if (submitted > 0) {
                 showMessage(`บันทึกสำเร็จ ${submitted} วัน${errors > 0 ? ` (มีข้อผิดพลาด ${errors} วัน)` : ''}`, 'success');
@@ -2451,9 +2464,13 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
         // UTILITY FUNCTIONS
         // ============================================================
         function toggleLoading(show, msg) { 
-            document.getElementById('loading-overlay').classList.toggle('hidden', !show); 
+            const overlay = document.getElementById('loading-overlay');
+            if (show) { overlay.classList.add('is-visible'); }
+            else { overlay.classList.remove('is-visible'); }
             const msgEl = document.getElementById('loading-overlay-msg');
+            const defaultMsgEl = document.getElementById('loading-overlay-default-msg');
             if(msgEl) msgEl.textContent = (show && msg) ? msg : '';
+            if(defaultMsgEl) defaultMsgEl.style.display = (show && msg) ? 'none' : '';
         }
 
 
@@ -3825,7 +3842,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const deleteAllBtn = `<button onclick="confirmDeleteAllLogs('${ds}')" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>ลบทั้งหมด</button>`;
             if(totalDayMins > 0) { const h=Math.floor(totalDayMins/60), m=totalDayMins%60; container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap"><div class="bg-blue-50/80 text-blue-800 px-5 py-3 rounded-2xl border border-blue-100 flex items-center gap-3 font-medium shadow-sm w-fit"><div class="bg-blue-500 text-white p-1.5 rounded-full shadow-sm flex-shrink-0"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="text-sm text-blue-700 font-semibold">รวมเวลาปฏิบัติงาน: <span class="text-xl font-bold text-blue-900 mx-1">${h}</span> ชม. <span class="text-xl font-bold text-blue-900 mx-1">${m}</span> น.</span></div>${submitAllBtn}${deleteAllBtn}</div>`; }
             else { container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap">${submitAllBtn}${deleteAllBtn}</div>`; }
-            const draftBtns = `<div class="flex gap-2"><button onclick="submitSingleDraftFromHistory('${ds}')" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button><button onclick="editDraft('${ds}')" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
+            const draftBtns = `<div class="flex gap-2"><button onclick="submitSingleDraftFromHistory('${ds}')" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button><button onclick="editDraft('${ds}')" class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border transition" style="color:#4DA866;background:white;border-color:rgba(77,168,102,0.2);" onmouseover="this.style.background='#4DA866';this.style.color='white';this.style.borderColor='#4DA866';" onmouseout="this.style.background='white';this.style.color='#4DA866';this.style.borderColor='rgba(77,168,102,0.2)';"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
             // เก็บ array ของ logs ปัจจุบันไว้ใน window เพื่อให้ onclick ดึงได้ตาม index โดยตรง
             window._currentDayLogs = logs;
 
@@ -3841,7 +3858,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         const statusClass = t.status === 'เสร็จสิ้น' ? 'text-green-600' : (t.status === 'ดำเนินการ' ? 'text-blue-600' : 'text-gray-700');
                         // แสดงปุ่มจัดการในทุก task card
                         const taskLabel = i.tasks.length > 1 ? `<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full font-bold">รายการที่ ${tIdx+1}/${i.tasks.length}</span>` : "";
-                        const editBtn = `<button onclick="editDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button>`;
+                        const editBtn = `<button onclick="editDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border transition" style="color:#4DA866;background:white;border-color:rgba(77,168,102,0.2);" onmouseover="this.style.background='#4DA866';this.style.color='white';this.style.borderColor='#4DA866';" onmouseout="this.style.background='white';this.style.color='#4DA866';this.style.borderColor='rgba(77,168,102,0.2)';"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button>`;
                         const headerBtns = `<div class="flex items-center gap-2 flex-wrap">${taskLabel}<button onclick="submitDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button>${editBtn}<button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
                         card.innerHTML = `<div class="flex justify-between items-center mb-3 border-b border-yellow-200 pb-3">
                             <span class="bg-warning text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">📝 แบบร่าง (ยังไม่ส่ง)</span>
@@ -3878,7 +3895,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 // ---- SUBMITTED: render แบบเดิม (ทุก task ใน 1 card) ----
                 const d = document.createElement('div');
                 d.className = `p-6 rounded-2xl shadow-sm border transition hover:shadow-md bg-green-50 border-green-200 mb-8`;
-                let headerHtml = `<div class="flex justify-between items-center mb-4 border-b border-green-200 pb-3"><div class="flex items-center gap-2 flex-wrap"><span class="bg-success text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">✅ บันทึกแล้ว</span><span class="text-[10px] text-gray-500">${i.timestamp ? new Date(i.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : ''}</span>${updatedAtForDay ? `<span class="text-[10px] text-blue-500 font-semibold">(แก้ไขล่าสุด: ${new Date(updatedAtForDay).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})} ${new Date(updatedAtForDay).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</span>` : ''}</div><div class="flex gap-2"><button onclick="editSubmittedLog(${logIdx}, '${ds}', true)" class="flex items-center gap-1 text-primary hover:text-white hover:bg-primary text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-primary/20 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="confirmDeleteLog('${i.id}', '${ds}')" class="flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-red-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบรายการ</button></div></div>`;
+                let headerHtml = `<div class="flex justify-between items-center mb-4 border-b border-green-200 pb-3"><div class="flex items-center gap-2 flex-wrap"><span class="bg-success text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">✅ บันทึกแล้ว</span><span class="text-[10px] text-gray-500">${i.timestamp ? new Date(i.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : ''}</span>${updatedAtForDay ? `<span class="text-[10px] text-blue-500 font-semibold">(แก้ไขล่าสุด: ${new Date(updatedAtForDay).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})} ${new Date(updatedAtForDay).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</span>` : ''}</div><div class="flex gap-2"><button onclick="editSubmittedLog(${logIdx}, '${ds}', true)" class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border transition" style="color:#4DA866;background:rgba(255,255,255,0.5);border-color:rgba(77,168,102,0.2);" onmouseover="this.style.background='#4DA866';this.style.color='white';this.style.borderColor='#4DA866';" onmouseout="this.style.background='rgba(255,255,255,0.5)';this.style.color='#4DA866';this.style.borderColor='rgba(77,168,102,0.2)';"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="confirmDeleteLog('${i.id}', '${ds}')" class="flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold px-3 py-1.5 bg-white/50 rounded-lg border border-red-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบรายการ</button></div></div>`;
                 let contentHtml = '';
                 if (i.tasks && i.tasks.length > 0) {
                     contentHtml += '<ul class="text-sm space-y-3 mb-4">';
@@ -4401,54 +4418,239 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             openEditLogModal(logToEdit, ds, taskIdx);
         }
         function editSubmittedLog(logIdOrIdx, ds, useIndex) {
-            // useIndex=true → ดึง log object จาก window._currentDayLogs ตาม index โดยตรง (เชื่อถือได้ 100%)
             let logToEdit = null;
             if (useIndex && window._currentDayLogs && window._currentDayLogs[logIdOrIdx]) {
                 logToEdit = window._currentDayLogs[logIdOrIdx];
             }
-            // fallback: ค้นหาตาม id (สำหรับ call เก่าหรือจากที่อื่น)
             if (!logToEdit) logToEdit = SERVER_HISTORY_DB.find(log => String(log.id) === String(logIdOrIdx));
             if (!logToEdit) { alert('ไม่พบข้อมูลที่ต้องการแก้ไข'); return; }
 
-            // ถ้าเป็น record ลา/อบรม/ลงพื้นที่ล้วนๆ (ไม่มี tasks) → ไปหน้า quick-log เหมือนเดิม
+            // ถ้าเป็น record ลา/อบรม/ลงพื้นที่ล้วนๆ → เปิด popup modal แก้ไขใหม่
             const isSpecialLog = (logToEdit.leaveCheckbox==='Yes'||logToEdit.trainingCheckbox==='Yes'||logToEdit.fieldworkCheckbox==='Yes') && (!logToEdit.tasks||logToEdit.tasks.length===0);
             if (isSpecialLog) {
-                switchView('quick-log');
-                setTimeout(() => {
-                    resetQuickLogForm();
-                    if (logToEdit.leaveCheckbox==='Yes') {
-                        const ltSel=document.getElementById('ql_leave_type'); if(ltSel){ltSel.value=logToEdit.leaveType||'';onQLLeaveTypeChange(ltSel);}
-                        const catSel=document.getElementById('ql_leave_category'); if(catSel){catSel.value=logToEdit.leaveCategory||'';onQLLeaveCategoryChange(catSel);}
-                        const startEl=document.getElementById('ql_start_date'); const endEl=document.getElementById('ql_end_date');
-                        if(startEl) startEl.value=logToEdit.leaveStartDate||ds; if(endEl) endEl.value=logToEdit.leaveEndDate||ds;
-                        const reasonEl=document.getElementById('ql_leave_reason'); if(reasonEl) reasonEl.value=logToEdit.leaveDetails||'';
-                        if(logToEdit.leaveType==='Hourly'&&logToEdit.leaveHoursAmt){const parts=String(logToEdit.leaveHoursAmt).split(':');const hEl=document.getElementById('ql_leave_hours');const mEl=document.getElementById('ql_leave_minutes');if(hEl)hEl.value=parts[0]||'0';if(mEl)mEl.value=parts[1]||'0';}
-                    }
-                    if (logToEdit.trainingCheckbox==='Yes') {
-                        const cb=document.getElementById('ql_training_checkbox'); if(cb){cb.checked=true;onQLTrainingChange(cb);}
-                        const detEl=document.getElementById('ql_training_details'); if(detEl){detEl.value=logToEdit.trainingDetails||'';detEl.disabled=false;}
-                        const tsEl=document.getElementById('ql_training_start_date'); if(tsEl) tsEl.value=logToEdit.trainingStartDate||ds;
-                        const teEl=document.getElementById('ql_training_end_date'); if(teEl) teEl.value=logToEdit.trainingEndDate||ds;
-                        const tstEl=document.getElementById('ql_training_start_time'); if(tstEl) tstEl.value=logToEdit.trainingStartTime||'';
-                        const tetEl=document.getElementById('ql_training_end_time'); if(tetEl) tetEl.value=logToEdit.trainingEndTime||'';
-                    }
-                    if (logToEdit.fieldworkCheckbox==='Yes') {
-                        const cb=document.getElementById('ql_fieldwork_checkbox'); if(cb){cb.checked=true;onQLFieldworkChange(cb);}
-                        const detEl=document.getElementById('ql_fieldwork_details'); if(detEl){detEl.value=logToEdit.fieldworkDetails||'';detEl.disabled=false;}
-                        const fsEl=document.getElementById('ql_fieldwork_start_date'); if(fsEl) fsEl.value=logToEdit.fieldworkStartDate||ds;
-                        const feEl=document.getElementById('ql_fieldwork_end_date'); if(feEl) feEl.value=logToEdit.fieldworkEndDate||ds;
-                        const fstEl=document.getElementById('ql_fieldwork_start_time'); if(fstEl) fstEl.value=logToEdit.fieldworkStartTime||'';
-                        const fetEl=document.getElementById('ql_fieldwork_end_time'); if(fetEl) fetEl.value=logToEdit.fieldworkEndTime||'';
-                    }
-                    const buddyEl=document.getElementById('ql_substitute_worker'); if(buddyEl) buddyEl.value=logToEdit.substituteWorker||'';
-                    const notesEl=document.getElementById('ql_notes'); if(notesEl) notesEl.value=logToEdit.notes||'';
-                    updateQLDuration();
-                    showMessage('โหลดข้อมูลสำเร็จ - แก้ไขแล้วกดยืนยันส่งข้อมูลอีกครั้ง', 'info');
-                }, 150);
+                openEditSpecialLogModal(logToEdit, ds);
                 return;
             }
-            // รายการบันทึกงานประจำวัน → เปิด popup modal แก้ไข (ส่ง object โดยตรง)
             openEditLogModal(logToEdit, ds);
+        }
+
+        // ── กำหนดตัวแปร state สำหรับ Special Log Modal ─────────────
+        let _eslmLogObj = null, _eslmDs = null, _eslmLogId = null;
+
+        function openEditSpecialLogModal(logObj, ds) {
+            _eslmLogObj = logObj;
+            _eslmDs = ds;
+            _eslmLogId = logObj.id;
+
+            document.getElementById('eslm-date').textContent = 'วันที่ ' + ds;
+            const body = document.getElementById('eslm-body');
+            body.innerHTML = '';
+
+            // สร้าง card ด้วย DOM จริง ไม่ใช้ innerHTML เพื่อหลีกเลี่ยง quote conflict
+            const makeCard = (title, color, borderColor, buildFn) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'background:white;border-radius:18px;border:1px solid ' + borderColor + ';padding:16px;';
+                const hdr = document.createElement('div');
+                hdr.style.cssText = 'font-weight:700;font-size:0.88rem;color:' + color + ';margin-bottom:12px;display:flex;align-items:center;gap:6px;';
+                hdr.textContent = title;
+                wrap.appendChild(hdr);
+                buildFn(wrap);
+                return wrap;
+            };
+            const lbl = (text) => {
+                const l = document.createElement('label');
+                l.style.cssText = 'font-size:0.72rem;font-weight:600;color:#6B7280;display:block;margin-bottom:4px;';
+                l.textContent = text;
+                return l;
+            };
+            const mkInp = (id, val, ph) => {
+                const i = document.createElement('input');
+                i.type = 'text'; i.id = id; i.value = val || ''; i.placeholder = ph || '';
+                i.style.cssText = 'width:100%;height:36px;border:1px solid #E2E8F0;border-radius:10px;padding:0 12px;font-size:0.85rem;font-family:inherit;color:#374151;box-sizing:border-box;';
+                return i;
+            };
+            const mkSel = (id, opts, val) => {
+                const s = document.createElement('select');
+                s.id = id;
+                s.style.cssText = 'width:100%;height:36px;border:1px solid #E2E8F0;border-radius:10px;padding:0 10px;font-size:0.85rem;font-family:inherit;color:#374151;box-sizing:border-box;';
+                opts.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v; opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    s.appendChild(opt);
+                });
+                return s;
+            };
+            const fieldEl = (labelText, inputEl, parent) => {
+                const d = document.createElement('div');
+                d.appendChild(lbl(labelText));
+                d.appendChild(inputEl);
+                parent.appendChild(d);
+            };
+            const row2El = (parent) => {
+                const g = document.createElement('div');
+                g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;';
+                parent.appendChild(g);
+                return g;
+            };
+
+            // ── การลา ──────────────────────────────────────────────
+            if (logObj.leaveCheckbox === 'Yes') {
+                body.appendChild(makeCard('🏖️ การลา', '#1D4ED8', '#DBEAFE', function(c) {
+                    const r1 = row2El(c);
+                    // Detect swapped leaveType/leaveCategory (saved incorrectly from old log form)
+                    const _dVals = ['Full','Morning','Afternoon','Hourly'];
+                    const _cVals = ['ลาป่วย','ลากิจ','ลาพักผ่อน','ลาคลอด/ตรวจครรภ์','ลาเพื่อพัฒนาความรู้','อื่นๆ'];
+                    const _lt = logObj.leaveType||'', _lc = logObj.leaveCategory||'';
+                    let _dur = _lt, _cat = _lc;
+                    if ((_cVals.includes(_lt) || _dVals.includes(_lc)) && !_dVals.includes(_lt)) { _dur = _lc; _cat = _lt; }
+                    fieldEl('ประเภทการลา', mkSel('eslm_leave_type', [
+                        {v:'',t:'-- เลือกประเภท --'},{v:'Full',t:'ลาเต็มวัน'},
+                        {v:'Morning',t:'ลาครึ่งวันเช้า (8.00-12.00)'},{v:'Afternoon',t:'ลาครึ่งวันบ่าย (13.00-17.00)'},
+                        {v:'Hourly',t:'ลาชั่วโมง'}
+                    ], _dur), r1);
+                    fieldEl('หมวดหมู่', mkSel('eslm_leave_cat', [
+                        {v:'',t:'-- เลือกหมวดหมู่ --'},{v:'ลาป่วย',t:'ลาป่วย'},{v:'ลากิจ',t:'ลากิจ'},
+                        {v:'ลาพักผ่อน',t:'ลาพักผ่อน'},{v:'ลาคลอด/ตรวจครรภ์',t:'ลาคลอด/ตรวจครรภ์'},
+                        {v:'ลาเพื่อพัฒนาความรู้',t:'ลาเพื่อพัฒนาความรู้'},{v:'อื่นๆ',t:'อื่นๆ'}
+                    ], _cat), r1);
+                    const r2 = row2El(c);
+                    fieldEl('วันที่เริ่มต้น', mkInp('eslm_leave_start', logObj.leaveStartDate||ds), r2);
+                    fieldEl('วันที่สิ้นสุด', mkInp('eslm_leave_end', logObj.leaveEndDate||ds), r2);
+                    fieldEl('เหตุผลการลา', mkInp('eslm_leave_reason', logObj.leaveDetails||'', 'ระบุเหตุผล...'), c);
+                    if (logObj.leaveType === 'Hourly') {
+                        const parts = String(logObj.leaveHoursAmt||'0:0').split(':');
+                        const hOpts = Array.from({length:9},(_,i)=>({v:String(i),t:String(i)}));
+                        const mOpts = Array.from({length:12},(_,i)=>({v:String(i*5),t:String(i*5).padStart(2,'0')}));
+                        const hrow = document.createElement('div'); hrow.style.marginTop = '10px';
+                        const hd = document.createElement('div');
+                        hd.appendChild(lbl('⏱️ จำนวนชั่วโมงที่ลา'));
+                        const hflex = document.createElement('div');
+                        hflex.style.cssText = 'display:flex;align-items:center;gap:8px;';
+                        hflex.appendChild(mkSel('eslm_leave_hours', hOpts, parts[0]||'0'));
+                        const sp1 = document.createElement('span'); sp1.style.cssText='font-size:0.82rem;color:#6B7280;'; sp1.textContent='ชม.';
+                        hflex.appendChild(sp1);
+                        hflex.appendChild(mkSel('eslm_leave_minutes', mOpts, parts[1]||'0'));
+                        const sp2 = document.createElement('span'); sp2.style.cssText='font-size:0.82rem;color:#6B7280;'; sp2.textContent='น.';
+                        hflex.appendChild(sp2);
+                        hd.appendChild(hflex); hrow.appendChild(hd); c.appendChild(hrow);
+                    }
+                }));
+            }
+
+            // ── การอบรม ─────────────────────────────────────────────
+            if (logObj.trainingCheckbox === 'Yes') {
+                body.appendChild(makeCard('📚 การอบรม', '#6D28D9', '#EDE9FE', function(c) {
+                    fieldEl('ชื่อหลักสูตร / การอบรม', mkInp('eslm_training_details', logObj.trainingDetails||'', 'ระบุชื่อหลักสูตร...'), c);
+                    const r1 = row2El(c);
+                    fieldEl('วันที่เริ่มอบรม', mkInp('eslm_training_start', logObj.trainingStartDate||ds), r1);
+                    fieldEl('วันที่สิ้นสุด', mkInp('eslm_training_end', logObj.trainingEndDate||ds), r1);
+                    const r2 = row2El(c);
+                    fieldEl('เวลาเริ่ม', mkInp('eslm_training_start_time', logObj.trainingStartTime||'', 'เช่น 09:00'), r2);
+                    fieldEl('เวลาสิ้นสุด', mkInp('eslm_training_end_time', logObj.trainingEndTime||'', 'เช่น 17:00'), r2);
+                }));
+            }
+
+            // ── การลงพื้นที่ ─────────────────────────────────────────
+            if (logObj.fieldworkCheckbox === 'Yes') {
+                body.appendChild(makeCard('🗺️ การลงพื้นที่', '#B45309', '#FEF3C7', function(c) {
+                    fieldEl('สถานที่ / รายละเอียด', mkInp('eslm_fieldwork_details', logObj.fieldworkDetails||'', 'ระบุสถานที่...'), c);
+                    const r1 = row2El(c);
+                    fieldEl('วันที่เริ่ม', mkInp('eslm_fieldwork_start', logObj.fieldworkStartDate||ds), r1);
+                    fieldEl('วันที่สิ้นสุด', mkInp('eslm_fieldwork_end', logObj.fieldworkEndDate||ds), r1);
+                    const r2 = row2El(c);
+                    fieldEl('เวลาเริ่ม', mkInp('eslm_fieldwork_start_time', logObj.fieldworkStartTime||'', 'เช่น 09:00'), r2);
+                    fieldEl('เวลาสิ้นสุด', mkInp('eslm_fieldwork_end_time', logObj.fieldworkEndTime||'', 'เช่น 17:00'), r2);
+                }));
+            }
+
+            // ── หมายเหตุ / Buddy ─────────────────────────────────────
+            body.appendChild(makeCard('🗒️ ข้อมูลเพิ่มเติม', '#374151', '#F1F5F9', function(c) {
+                fieldEl('ผู้ปฏิบัติงานแทน (Buddy)', mkInp('eslm_substitute', logObj.substituteWorker||'', ''), c);
+                const nd = document.createElement('div'); nd.style.marginTop = '10px';
+                nd.appendChild(lbl('หมายเหตุ'));
+                const ta = document.createElement('textarea');
+                ta.id = 'eslm_notes'; ta.rows = 2;
+                ta.style.cssText = 'width:100%;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;font-size:0.85rem;font-family:inherit;resize:none;box-sizing:border-box;';
+                ta.value = logObj.notes || '';
+                nd.appendChild(ta); c.appendChild(nd);
+            }));
+
+            // แสดง modal
+            const modal = document.getElementById('editSpecialLogModal');
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditSpecialLogModal() {
+            const modal = document.getElementById('editSpecialLogModal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            _eslmLogObj = null; _eslmDs = null; _eslmLogId = null;
+        }
+
+        async function saveEditSpecialLogModal() {
+            if (!_eslmLogObj || !_eslmDs) return;
+            const log = _eslmLogObj;
+
+            const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+
+            const leaveHoursAmt = (log.leaveCheckbox==='Yes' && g('eslm_leave_type')==='Hourly')
+                ? g('eslm_leave_hours') + ':' + String(g('eslm_leave_minutes')||'0').padStart(2,'0')
+                : log.leaveHoursAmt||'';
+
+            const payload = {
+                date:              _eslmDs,
+                employee:          LOGGED_IN_USER,
+                employeeId:        LOGGED_IN_USER_ID,
+                tasks:             log.tasks||[],
+                notes:             g('eslm_notes'),
+                substituteWorker:  g('eslm_substitute'),
+                leaveCheckbox:     log.leaveCheckbox||'No',
+                leaveType:         log.leaveCheckbox==='Yes' ? g('eslm_leave_type') : '',
+                leaveCategory:     log.leaveCheckbox==='Yes' ? g('eslm_leave_cat') : '',
+                leaveDetails:      log.leaveCheckbox==='Yes' ? g('eslm_leave_reason') : '',
+                leaveStartDate:    log.leaveCheckbox==='Yes' ? g('eslm_leave_start') : '',
+                leaveEndDate:      log.leaveCheckbox==='Yes' ? g('eslm_leave_end') : '',
+                leaveHoursAmt,
+                trainingCheckbox:  log.trainingCheckbox||'No',
+                trainingDetails:   log.trainingCheckbox==='Yes' ? g('eslm_training_details') : '',
+                trainingStartDate: log.trainingCheckbox==='Yes' ? g('eslm_training_start') : '',
+                trainingStartTime: log.trainingCheckbox==='Yes' ? g('eslm_training_start_time') : '',
+                trainingEndDate:   log.trainingCheckbox==='Yes' ? g('eslm_training_end') : '',
+                trainingEndTime:   log.trainingCheckbox==='Yes' ? g('eslm_training_end_time') : '',
+                fieldworkCheckbox: log.fieldworkCheckbox||'No',
+                fieldworkDetails:  log.fieldworkCheckbox==='Yes' ? g('eslm_fieldwork_details') : '',
+                fieldworkStartDate:log.fieldworkCheckbox==='Yes' ? g('eslm_fieldwork_start') : '',
+                fieldworkStartTime:log.fieldworkCheckbox==='Yes' ? g('eslm_fieldwork_start_time') : '',
+                fieldworkEndDate:  log.fieldworkCheckbox==='Yes' ? g('eslm_fieldwork_end') : '',
+                fieldworkEndTime:  log.fieldworkCheckbox==='Yes' ? g('eslm_fieldwork_end_time') : '',
+                isDraft: false,
+            };
+
+            const editId = _eslmLogId;
+            const editDs = _eslmDs;
+            closeEditSpecialLogModal();
+
+            toggleLoading(true, 'กำลังบันทึกการแก้ไข...');
+            try {
+                await Promise.all([
+                    fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify(payload)}),
+                    fetch(WEBHOOK_URL, {method:'POST', body:JSON.stringify({action:'delete', id:editId})})
+                ]);
+                // Optimistic update
+                SERVER_HISTORY_DB = SERVER_HISTORY_DB.filter(x => String(x.id) !== String(editId));
+                SERVER_HISTORY_DB.push(Object.assign({}, payload, {id:'local_'+Date.now()}));
+                try { const uaMap=JSON.parse(localStorage.getItem(UPDATED_AT_MAP_KEY)||'{}'); uaMap[LOGGED_IN_USER+'|'+editDs]=new Date().toISOString(); localStorage.setItem(UPDATED_AT_MAP_KEY, JSON.stringify(uaMap)); } catch(e2){}
+                if(IS_ADMIN){renderAdminCalendar();renderAdminMonthlyLogs();}else{renderCalendar();}
+                renderDayLogs(editDs);
+                toggleLoading(false);
+                showMessage('✅ แก้ไขข้อมูลเรียบร้อยแล้ว', 'success');
+                fetchHistoryFromServer(true);
+            } catch(e) {
+                toggleLoading(false);
+                showMessage('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            }
         }
 
         async function confirmDeleteLog(id, ds) {
