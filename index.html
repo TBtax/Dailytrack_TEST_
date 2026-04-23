@@ -3644,12 +3644,23 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     message: `มีแบบร่างวันที่ ${d.date} บันทึกไว้ ${_existingDraft.tasks.length} รายการ\nการบันทึกนี้จะแทนที่แบบร่างเดิมทั้งหมด\n\nต้องการดำเนินการต่อหรือไม่?`,
                     type: 'danger',
                     okText: 'แทนที่แบบร่างเดิม',
-                    cancelText: 'ยกเลิก'
+                    newItemText: 'เพิ่มรายการใหม่'
                 }).then(ok => {
-                    if (ok) {
+                    if (ok === true) {
                         saveDraftForDate(d.date, d);
                         window._draftLoadedForDate = d.date;
                         showMessage('บันทึกฉบับร่างเรียบร้อยแล้ว');
+                        fetchHistoryFromServer();
+                        resetLogForm();
+                    } else if (ok === 'new') {
+                        // รวมรายการใหม่เข้ากับแบบร่างเดิม
+                        const merged = { ..._existingDraft };
+                        const existingTasks = (_existingDraft.tasks || []);
+                        const newTasks = (d.tasks || []);
+                        merged.tasks = [...existingTasks, ...newTasks];
+                        saveDraftForDate(d.date, merged);
+                        window._draftLoadedForDate = d.date;
+                        showMessage(`เพิ่ม ${newTasks.length} รายการเข้าแบบร่างเดิมเรียบร้อยแล้ว`, 'success');
                         fetchHistoryFromServer();
                         resetLogForm();
                     }
@@ -5802,6 +5813,16 @@ ${(() => {
             margin-bottom: 24px; font-family: 'Prompt', sans-serif;
         }
         .ccm-actions { display: flex; gap: 10px; }
+        .ccm-close-btn {
+            position: absolute; top: 14px; right: 14px;
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #EF4444; color: white;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; box-shadow: 0 2px 8px rgba(239,68,68,0.35);
+            font-family: 'Prompt', sans-serif;
+        }
+        .ccm-close-btn:hover { background: #DC2626; transform: rotate(90deg) scale(1.1); }
         .ccm-btn-cancel {
             flex: 1; padding: 11px; border-radius: 14px;
             border: 1px solid #E2E8F0; background: #F8FAFC;
@@ -5810,6 +5831,12 @@ ${(() => {
             font-family: 'Prompt', sans-serif;
         }
         .ccm-btn-cancel:hover { background: #F1F5F9; border-color: #CBD5E1; }
+        .ccm-btn-cancel.ccm-btn-new {
+            border: none; background: linear-gradient(135deg, #4DA866, #38a158);
+            color: white; font-weight: 700;
+            box-shadow: 0 4px 14px rgba(77,168,102,0.3);
+        }
+        .ccm-btn-cancel.ccm-btn-new:hover { background: linear-gradient(135deg, #3d9456, #2e8a48); transform: translateY(-1px); border: none; }
         .ccm-btn-ok {
             flex: 1; padding: 11px; border-radius: 14px;
             border: none; color: white;
@@ -5828,13 +5855,18 @@ ${(() => {
     <div id="customConfirmModal">
         <div class="ccm-backdrop" onclick="_ccmReject()"></div>
         <div class="ccm-card">
+            <button class="ccm-close-btn" onclick="_ccmReject()" id="ccm-btn-close" title="ปิด">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
             <div class="ccm-icon-wrap" id="ccm-icon-wrap">
                 <svg id="ccm-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></svg>
             </div>
             <div class="ccm-title" id="ccm-title"></div>
             <div class="ccm-message" id="ccm-message"></div>
             <div class="ccm-actions">
-                <button class="ccm-btn-cancel" onclick="_ccmReject()" id="ccm-btn-cancel">ยกเลิก</button>
+                <button class="ccm-btn-cancel" onclick="_ccmResolveNew()" id="ccm-btn-cancel">เพิ่มรายการใหม่</button>
                 <button class="ccm-btn-ok" id="ccm-btn-ok" onclick="_ccmResolve()">ตกลง</button>
             </div>
         </div>
@@ -5842,17 +5874,30 @@ ${(() => {
     <script>
         let _ccmCallback = null;
 
-        function showConfirm({ title, message, type = 'danger', okText = 'ตกลง', cancelText = 'ยกเลิก' }) {
+        function showConfirm({ title, message, type = 'danger', okText = 'ตกลง', cancelText = 'ยกเลิก', newItemText = null }) {
             return new Promise((resolve) => {
                 _ccmCallback = resolve;
                 const iconWrap = document.getElementById('ccm-icon-wrap');
                 const icon = document.getElementById('ccm-icon');
                 const okBtn = document.getElementById('ccm-btn-ok');
+                const cancelBtn = document.getElementById('ccm-btn-cancel');
 
                 document.getElementById('ccm-title').textContent = title;
                 document.getElementById('ccm-message').textContent = message;
-                document.getElementById('ccm-btn-cancel').textContent = cancelText;
                 document.getElementById('ccm-btn-ok').textContent = okText;
+
+                // ถ้ามี newItemText → แสดงปุ่มสีเขียว "เพิ่มรายการใหม่" + onclick resolveNew
+                if (newItemText) {
+                    cancelBtn.textContent = newItemText;
+                    cancelBtn.style.cssText = '';
+                    cancelBtn.className = 'ccm-btn-cancel ccm-btn-new';
+                    cancelBtn.onclick = _ccmResolveNew;
+                } else {
+                    cancelBtn.textContent = cancelText;
+                    cancelBtn.style.cssText = '';
+                    cancelBtn.className = 'ccm-btn-cancel';
+                    cancelBtn.onclick = _ccmReject;
+                }
 
                 iconWrap.className = 'ccm-icon-wrap ' + type;
                 okBtn.className = 'ccm-btn-ok ' + type;
@@ -5872,6 +5917,10 @@ ${(() => {
         function _ccmResolve() {
             document.getElementById('customConfirmModal').classList.remove('show');
             if (_ccmCallback) { _ccmCallback(true); _ccmCallback = null; }
+        }
+        function _ccmResolveNew() {
+            document.getElementById('customConfirmModal').classList.remove('show');
+            if (_ccmCallback) { _ccmCallback('new'); _ccmCallback = null; }
         }
         function _ccmReject() {
             document.getElementById('customConfirmModal').classList.remove('show');
