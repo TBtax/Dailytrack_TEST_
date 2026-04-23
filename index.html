@@ -444,7 +444,7 @@
 
     </style>
     <div id="loading-overlay">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:18px;background:#ffffff;padding:32px 40px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;background:#ffffff;padding:24px 40px 20px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
             <div class="ld-dots">
                 <div class="ld-dot"></div>
                 <div class="ld-dot"></div>
@@ -1410,7 +1410,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             <div class="sidebar-footer">
                 <div class="bg-[#F0FDF4] rounded-2xl p-2 flex items-center gap-3 border border-[#E2E8F0] sidebar-item cursor-default hover:bg-[#DCFCE7]">
                     <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 shadow-sm overflow-hidden" id="profile-initial">?</div>
-                    <div class="flex-1 min-w-0 sidebar-text"><p class="text-sm font-bold text-gray-700 truncate" id="sidebar-username">--</p><p class="text-xs text-success font-medium">● ออนไลน์</p></div>
+                    <div class="flex-1 min-w-0 sidebar-text">
+                        <p class="text-sm font-bold text-gray-700 truncate" id="sidebar-username">--</p>
+                        <p style="font-family:'Sarabun',sans-serif;font-size:0.68rem;color:#94A3B8;letter-spacing:0.08em;margin-top:2px;font-weight:600;">Last update : 070526 · v3.0</p>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -3958,8 +3961,12 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             const hasDraft = logs.some(x => x.isDraft);
             const submitAllBtn = hasDraft ? `<button onclick="submitAllDraftsFromHistory('${ds}')" class="flex items-center gap-2 bg-gradient-to-r from-[#4DA866] to-[#3988D4] text-white text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่งข้อมูลทั้งหมด</button>` : '';
             const deleteAllBtn = `<button onclick="confirmDeleteAllLogs('${ds}')" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2.5 rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>ลบทั้งหมด</button>`;
-            if(totalDayMins > 0) { const h=Math.floor(totalDayMins/60), m=totalDayMins%60; container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap"><div class="bg-blue-50/80 text-blue-800 px-5 py-3 rounded-2xl border border-blue-100 flex items-center gap-3 font-medium shadow-sm w-fit"><div class="bg-blue-500 text-white p-1.5 rounded-full shadow-sm flex-shrink-0"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="text-sm text-blue-700 font-semibold">รวมเวลาปฏิบัติงาน: <span class="text-xl font-bold text-blue-900 mx-1">${h}</span> ชม. <span class="text-xl font-bold text-blue-900 mx-1">${m}</span> น.</span></div>${submitAllBtn}${deleteAllBtn}</div>`; }
-            else { container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap">${submitAllBtn}${deleteAllBtn}</div>`; }
+            const excelBtn = !hasDraft ? `<button onclick="downloadDayLogsExcel('${ds}')" title="Download Excel" style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:16px;border:2px solid #1D6F42;background:white;color:#1D6F42;font-weight:700;font-size:0.82rem;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(29,111,66,0.12);font-family:inherit;" onmouseover="this.style.background='#1D6F42';this.style.color='white';this.style.boxShadow='0 4px 14px rgba(29,111,66,0.35)';" onmouseout="this.style.background='white';this.style.color='#1D6F42';this.style.boxShadow='0 2px 8px rgba(29,111,66,0.12)';">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8.5 19l-2-2.5H8V14h1v2.5h1.5L8.5 19zm3.5-1h-1v-4h1v4zm2.5 1-2-2.5H14V14h1v2.5h1.5L14.5 19z"/><rect x="2" y="10" width="20" height="8" rx="1.5" fill="#1D6F42" opacity="0.15"/><text x="12" y="16.5" text-anchor="middle" font-size="5.5" font-weight="900" fill="#1D6F42" font-family="Arial,sans-serif">XLS</text></svg>
+                Download Excel
+            </button>` : '';
+            if(totalDayMins > 0) { const h=Math.floor(totalDayMins/60), m=totalDayMins%60; container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap"><div class="bg-blue-50/80 text-blue-800 px-5 py-3 rounded-2xl border border-blue-100 flex items-center gap-3 font-medium shadow-sm w-fit"><div class="bg-blue-500 text-white p-1.5 rounded-full shadow-sm flex-shrink-0"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><span class="text-sm text-blue-700 font-semibold">รวมเวลาปฏิบัติงาน: <span class="text-xl font-bold text-blue-900 mx-1">${h}</span> ชม. <span class="text-xl font-bold text-blue-900 mx-1">${m}</span> น.</span></div>${submitAllBtn}${deleteAllBtn}${excelBtn}</div>`; }
+            else { container.innerHTML += `<div class="mb-6 flex items-center gap-3 flex-wrap">${submitAllBtn}${deleteAllBtn}${excelBtn}</div>`; }
             const draftBtns = `<div class="flex gap-2"><button onclick="submitSingleDraftFromHistory('${ds}')" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button><button onclick="editDraft('${ds}')" class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border transition" style="color:#4DA866;background:white;border-color:rgba(77,168,102,0.2);" onmouseover="this.style.background='#4DA866';this.style.color='white';this.style.borderColor='#4DA866';" onmouseout="this.style.background='white';this.style.color='#4DA866';this.style.borderColor='rgba(77,168,102,0.2)';"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button><button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
             // เก็บ array ของ logs ปัจจุบันไว้ใน window เพื่อให้ onclick ดึงได้ตาม index โดยตรง
             window._currentDayLogs = logs;
@@ -4059,6 +4066,79 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if (titleEl) titleEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>แก้ไขแบบร่าง<span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date">วันที่ ${ds}</span>`;
         }
         function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { deleteDraftForDate(ds); renderCalendar(); renderDayLogs(ds); const logDate = document.getElementById('date')?.value; if(logDate && isSameDate(logDate, ds)) { loadDraftOrPreviousLog(ds); checkDateStatus(ds); } } }); }
+
+        function downloadDayLogsExcel(ds) {
+            try {
+                const logs = SERVER_HISTORY_DB.filter(x => isSameDate(x.date, ds) && x.employee === LOGGED_IN_USER && !x.isDraft);
+                if (!logs.length) { showMessage('ไม่พบข้อมูลสำหรับวันนี้', 'error'); return; }
+                const exportData = [];
+                logs.forEach(log => {
+                    if (log.tasks && log.tasks.length > 0) {
+                        log.tasks.forEach(t => {
+                            exportData.push({
+                                'วันที่': log.date,
+                                'พนักงาน': log.employee,
+                                'ผู้แจ้งงาน': t.requester || '-',
+                                'Agent': t.agent || '-',
+                                'หัวข้อ': t.topic || '-',
+                                'รายละเอียด': t.detail || '-',
+                                'ปัญหา': t.problem || '-',
+                                'เวลา (ชม.)': t.durationHours || '0',
+                                'เวลา (นาที)': t.durationMinutes || '0',
+                                'สถานะ': t.status || '-',
+                                'ที่ปรึกษา': t.consultant || '-',
+                            });
+                        });
+                    }
+                    if (log.leaveCheckbox === 'Yes') {
+                        exportData.push({
+                            'วันที่': log.date, 'พนักงาน': log.employee,
+                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'การลา',
+                            'รายละเอียด': (log.leaveCategory||'-') + ' / ' + (log.leaveType||'-'),
+                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
+                            'สถานะ': '-', 'ที่ปรึกษา': log.leaveDetails||'-',
+                        });
+                    }
+                    if (log.trainingCheckbox === 'Yes') {
+                        exportData.push({
+                            'วันที่': log.date, 'พนักงาน': log.employee,
+                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'อบรม',
+                            'รายละเอียด': log.trainingDetails||'-',
+                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
+                            'สถานะ': '-', 'ที่ปรึกษา': '-',
+                        });
+                    }
+                    if (log.fieldworkCheckbox === 'Yes') {
+                        exportData.push({
+                            'วันที่': log.date, 'พนักงาน': log.employee,
+                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'ลงพื้นที่',
+                            'รายละเอียด': log.fieldworkDetails||'-',
+                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
+                            'สถานะ': '-', 'ที่ปรึกษา': '-',
+                        });
+                    }
+                });
+                if (!exportData.length) { showMessage('ไม่พบข้อมูล', 'error'); return; }
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const addr = XLSX.utils.encode_cell({r: R, c: C});
+                        if (!ws[addr]) continue;
+                        if (!ws[addr].s) ws[addr].s = {};
+                        ws[addr].s.alignment = { wrapText: C === 5 || C === 6, vertical: 'top' };
+                        ws[addr].v = String(ws[addr].v ?? ''); ws[addr].t = 's';
+                        delete ws[addr].w; delete ws[addr].z;
+                    }
+                }
+                ws['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:18},{wch:20},{wch:45},{wch:35},{wch:10},{wch:10},{wch:15},{wch:20}];
+                ws['!rows'] = Array.from({length: range.e.r + 1}, (_, i) => ({ hpt: i === 0 ? 22 : 25 }));
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'WorkLog');
+                const fileName = `WorkLog_${LOGGED_IN_USER.split(' ')[0]}_${ds.replace(/\//g,'-')}.xlsx`;
+                XLSX.writeFile(wb, fileName, { cellStyles: true });
+            } catch(e) { console.error(e); showMessage('Download ไม่สำเร็จ: ' + e.message, 'error'); }
+        }
         function deleteDraftTask(ds, tIdx) {
             const draft = getDraftForDate(ds);
             if (!draft || !draft.tasks) return;
