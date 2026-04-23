@@ -1015,8 +1015,7 @@ main { background: var(--bg) !important; }
 /* ── 5. Page header ───────────────────────────────────────── */
 header h2 { color: var(--txt) !important; }
 #header-user-display { color: var(--pri) !important; }
-#header-download-btn { background: var(--card) !important; border-color: var(--border) !important; color: var(--txt) !important; }
-#header-download-btn:hover { background: var(--pri) !important; border-color: var(--pri) !important; color: #fff !important; }
+
 
 /* ── 6. Task list card header (replaces solid green) ─────── */
 /* Target by inline style since Tailwind class won't override */
@@ -1444,9 +1443,9 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                         🔙 กลับสู่ Admin
                     </button>
-                    <button id="header-download-btn" onclick="showModal('exportRangeModal')" class="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-2xl hover:bg-primary hover:text-white hover:border-primary transition shadow-sm font-bold text-sm group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        <span>Download</span>
+                    <button id="header-download-btn" onclick="showModal('exportRangeModal')" class="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm font-bold text-sm group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/></svg>
+                        <span>Download Excel</span>
                     </button>
                     <button onclick="showConfirm({title:'ออกจากระบบ',message:'คุณต้องการออกจากระบบใช่หรือไม่?',type:'warning',okText:'ออกจากระบบ'}).then(ok=>{ if(ok) handleLogout(); })" class="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-2xl hover:bg-red-500 hover:text-white hover:border-red-500 transition shadow-sm font-bold text-sm group">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
@@ -4076,66 +4075,115 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     if (log.tasks && log.tasks.length > 0) {
                         log.tasks.forEach(t => {
                             exportData.push({
-                                'วันที่': log.date,
-                                'พนักงาน': log.employee,
-                                'ผู้แจ้งงาน': t.requester || '-',
-                                'Agent': t.agent || '-',
-                                'หัวข้อ': t.topic || '-',
-                                'รายละเอียด': t.detail || '-',
-                                'ปัญหา': t.problem || '-',
-                                'เวลา (ชม.)': t.durationHours || '0',
-                                'เวลา (นาที)': t.durationMinutes || '0',
-                                'สถานะ': t.status || '-',
-                                'ที่ปรึกษา': t.consultant || '-',
+                                "วันที่": log.date,
+                                "พนักงาน": log.employee,
+                                "ผู้แจ้งงาน": t.requester || '-',
+                                "Agent": t.agent || '-',
+                                "หัวข้อ": t.topic || '-',
+                                "รายละเอียด": t.detail || '-',
+                                "ปัญหา": t.problem || '-',
+                                "เวลา (ชม.)": t.durationHours || '0',
+                                "เวลา (นาที)": t.durationMinutes || '0',
+                                "สถานะ": t.status || '-',
+                                "ที่ปรึกษา": t.consultant || '-',
+                                "ประเภทการลา": '',
+                                "หมวดหมู่การลา": '',
+                                "ระยะเวลาลา": '',
+                                "เหตุผลการลา": '',
+                                "วันที่เริ่ม": '',
+                                "วันที่สิ้นสุด": '',
+                                "เวลาเริ่ม": '',
+                                "เวลาสิ้นสุด": '',
+                                "ผู้สำรอง/หมายเหตุ": ''
                             });
                         });
                     }
                     if (log.leaveCheckbox === 'Yes') {
+                        const leaveTypeTxt = log.leaveType==='Full'?'ลาเต็มวัน':(log.leaveType==='Morning'?'ลาครึ่งวันเช้า':(log.leaveType==='Afternoon'?'ลาครึ่งวันบ่าย':(log.leaveType==='Hourly'?`ลาชั่วโมง (${formatLeaveHoursAmt(log.leaveHoursAmt)})`:'ลา')));
                         exportData.push({
-                            'วันที่': log.date, 'พนักงาน': log.employee,
-                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'การลา',
-                            'รายละเอียด': (log.leaveCategory||'-') + ' / ' + (log.leaveType||'-'),
-                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
-                            'สถานะ': '-', 'ที่ปรึกษา': log.leaveDetails||'-',
+                            "วันที่": log.date,
+                            "พนักงาน": log.employee,
+                            "ผู้แจ้งงาน": '-',
+                            "Agent": '-',
+                            "หัวข้อ": log.leaveCategory || leaveTypeTxt,
+                            "รายละเอียด": log.leaveDetails || '-',
+                            "ปัญหา": '-',
+                            "เวลา (ชม.)": '-',
+                            "เวลา (นาที)": '-',
+                            "สถานะ": '-',
+                            "ที่ปรึกษา": '-',
+                            "ประเภทการลา": leaveTypeTxt,
+                            "หมวดหมู่การลา": log.leaveCategory || '-',
+                            "ระยะเวลาลา": log.leaveType === 'Hourly' ? formatLeaveHoursAmt(log.leaveHoursAmt) : '-',
+                            "เหตุผลการลา": log.leaveDetails || '-',
+                            "วันที่เริ่ม": log.leaveStartDate || log.date || '-',
+                            "วันที่สิ้นสุด": log.leaveEndDate || log.date || '-',
+                            "เวลาเริ่ม": '-',
+                            "เวลาสิ้นสุด": '-',
+                            "ผู้สำรอง/หมายเหตุ": log.substituteWorker || '-'
                         });
                     }
                     if (log.trainingCheckbox === 'Yes') {
+                        const tStart = log.trainingStartDate || log.date || '-';
+                        const tEnd   = log.trainingEndDate || log.date || '-';
+                        const tSTime = log.trainingStartTime || '-';
+                        const tETime = log.trainingEndTime || '-';
                         exportData.push({
-                            'วันที่': log.date, 'พนักงาน': log.employee,
-                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'อบรม',
-                            'รายละเอียด': log.trainingDetails||'-',
-                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
-                            'สถานะ': '-', 'ที่ปรึกษา': '-',
+                            "วันที่": log.date, "พนักงาน": log.employee, "ผู้แจ้งงาน": '-', "Agent": '-',
+                            "หัวข้อ": 'อบรม', "รายละเอียด": log.trainingDetails || '-', "ปัญหา": '-',
+                            "เวลา (ชม.)": '-', "เวลา (นาที)": '-', "สถานะ": '-', "ที่ปรึกษา": '-',
+                            "ประเภทการลา": '-', "หมวดหมู่การลา": '-', "ระยะเวลาลา": '-', "เหตุผลการลา": '-',
+                            "วันที่เริ่ม": tStart, "วันที่สิ้นสุด": tEnd, "เวลาเริ่ม": tSTime, "เวลาสิ้นสุด": tETime,
+                            "ผู้สำรอง/หมายเหตุ": log.substituteWorker || '-'
                         });
                     }
                     if (log.fieldworkCheckbox === 'Yes') {
+                        const fStart = log.fieldworkStartDate || log.date || '-';
+                        const fEnd   = log.fieldworkEndDate || log.date || '-';
+                        const fSTime = log.fieldworkStartTime || '-';
+                        const fETime = log.fieldworkEndTime || '-';
                         exportData.push({
-                            'วันที่': log.date, 'พนักงาน': log.employee,
-                            'ผู้แจ้งงาน': '-', 'Agent': '-', 'หัวข้อ': 'ลงพื้นที่',
-                            'รายละเอียด': log.fieldworkDetails||'-',
-                            'ปัญหา': '-', 'เวลา (ชม.)': '-', 'เวลา (นาที)': '-',
-                            'สถานะ': '-', 'ที่ปรึกษา': '-',
+                            "วันที่": log.date, "พนักงาน": log.employee, "ผู้แจ้งงาน": '-', "Agent": '-',
+                            "หัวข้อ": 'ลงพื้นที่', "รายละเอียด": log.fieldworkDetails || '-', "ปัญหา": '-',
+                            "เวลา (ชม.)": '-', "เวลา (นาที)": '-', "สถานะ": '-', "ที่ปรึกษา": '-',
+                            "ประเภทการลา": '-', "หมวดหมู่การลา": '-', "ระยะเวลาลา": '-', "เหตุผลการลา": '-',
+                            "วันที่เริ่ม": fStart, "วันที่สิ้นสุด": fEnd, "เวลาเริ่ม": fSTime, "เวลาสิ้นสุด": fETime,
+                            "ผู้สำรอง/หมายเหตุ": log.substituteWorker || '-'
                         });
                     }
                 });
                 if (!exportData.length) { showMessage('ไม่พบข้อมูล', 'error'); return; }
                 const ws = XLSX.utils.json_to_sheet(exportData);
-                const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-                for (let R = range.s.r; R <= range.e.r; ++R) {
-                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                const wsRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+                const rowHeights = [];
+                for (let R = wsRange.s.r; R <= wsRange.e.r; ++R) {
+                    let maxLines = 1;
+                    for (let C = wsRange.s.c; C <= wsRange.e.c; ++C) {
                         const addr = XLSX.utils.encode_cell({r: R, c: C});
                         if (!ws[addr]) continue;
                         if (!ws[addr].s) ws[addr].s = {};
-                        ws[addr].s.alignment = { wrapText: C === 5 || C === 6, vertical: 'top' };
-                        ws[addr].v = String(ws[addr].v ?? ''); ws[addr].t = 's';
-                        delete ws[addr].w; delete ws[addr].z;
+                        ws[addr].s.alignment = (C === 5 || C === 6) ? { wrapText: true, vertical: "top" } : { wrapText: false, vertical: "top" };
+                        ws[addr].v = String(ws[addr].v ?? '');
+                        ws[addr].t = 's';
+                        delete ws[addr].w;
+                        delete ws[addr].z;
+                        const cellLines = String(ws[addr].v || '').split('\n').length;
+                        if (cellLines > maxLines) maxLines = cellLines;
                     }
+                    rowHeights.push({ hpt: R === 0 ? 22 : Math.max(25, maxLines * 25) });
                 }
-                ws['!cols'] = [{wch:12},{wch:22},{wch:18},{wch:18},{wch:20},{wch:45},{wch:35},{wch:10},{wch:10},{wch:15},{wch:20}];
-                ws['!rows'] = Array.from({length: range.e.r + 1}, (_, i) => ({ hpt: i === 0 ? 22 : 25 }));
+                ws['!rows'] = rowHeights;
+                ws['!cols'] = [
+                    {wch:12},{wch:22},{wch:18},{wch:18},{wch:25},
+                    {wch:45},{wch:35},{wch:10},{wch:10},{wch:15},
+                    {wch:15},{wch:20},{wch:20},{wch:14},{wch:30},
+                    {wch:14},{wch:14},{wch:12},{wch:12},{wch:22}
+                ];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'WorkLog');
-                const fileName = `WorkLog_${LOGGED_IN_USER.split(' ')[0]}_${ds.replace(/\//g,'-')}.xlsx`;
+                const firstName = (LOGGED_IN_USER.split(' ')[0] || 'User').replace(/[\/\\:*?"<>|]/g,'').trim() || 'User';
+                const dateStr = ds.replace(/\//g,'-');
+                const fileName = `Report_${firstName}_${dateStr}_${dateStr}.xlsx`;
                 XLSX.writeFile(wb, fileName, { cellStyles: true });
             } catch(e) { console.error(e); showMessage('Download ไม่สำเร็จ: ' + e.message, 'error'); }
         }
