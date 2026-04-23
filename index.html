@@ -3938,7 +3938,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                         // แสดงปุ่มจัดการในทุก task card
                         const taskLabel = i.tasks.length > 1 ? `<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full font-bold">รายการที่ ${tIdx+1}/${i.tasks.length}</span>` : "";
                         const editBtn = `<button onclick="editDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border transition" style="color:#4DA866;background:white;border-color:rgba(77,168,102,0.2);" onmouseover="this.style.background='#4DA866';this.style.color='white';this.style.borderColor='#4DA866';" onmouseout="this.style.background='white';this.style.color='#4DA866';this.style.borderColor='rgba(77,168,102,0.2)';"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>แก้ไข</button>`;
-                        const headerBtns = `<div class="flex items-center gap-2 flex-wrap">${taskLabel}<button onclick="submitDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button>${editBtn}<button onclick="deleteDraft('${ds}')" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
+                        const headerBtns = `<div class="flex items-center gap-2 flex-wrap">${taskLabel}<button onclick="submitDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-white bg-gradient-to-r from-[#4DA866] to-[#3988D4] hover:opacity-90 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>ส่ง</button>${editBtn}<button onclick="deleteDraftTask('${ds}', ${tIdx})" class="flex items-center gap-1 text-red-500 hover:text-white hover:bg-red-500 text-xs font-bold px-3 py-1.5 bg-white rounded-lg border border-red-200 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>ลบ</button></div>`;
                         card.innerHTML = `<div class="flex justify-between items-center mb-3 border-b border-yellow-200 pb-3">
                             <span class="bg-warning text-white text-xs px-3 py-1 rounded-lg font-bold shadow-sm">📝 แบบร่าง (ยังไม่ส่ง)</span>
                             ${headerBtns}
@@ -4020,6 +4020,25 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if (titleEl) titleEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>แก้ไขแบบร่าง<span style="font-weight:500;font-size:0.85rem;opacity:0.75;white-space:nowrap;" id="editLogModal-date">วันที่ ${ds}</span>`;
         }
         function deleteDraft(ds) { showConfirm({title:'ลบแบบร่าง',message:'คุณต้องการลบ "แบบร่าง" ประจำวันที่ ' + ds + ' ใช่หรือไม่?',type:'danger',okText:'ลบแบบร่าง'}).then(ok=>{ if(ok) { deleteDraftForDate(ds); renderCalendar(); renderDayLogs(ds); const logDate = document.getElementById('date')?.value; if(logDate && isSameDate(logDate, ds)) { loadDraftOrPreviousLog(ds); checkDateStatus(ds); } } }); }
+        function deleteDraftTask(ds, tIdx) {
+            const draft = getDraftForDate(ds);
+            if (!draft || !draft.tasks) return;
+            const taskNum = tIdx + 1;
+            showConfirm({title:'ลบรายการ',message:`คุณต้องการลบรายการที่ ${taskNum} ออกจากแบบร่างวันที่ ${ds} ใช่หรือไม่?`,type:'danger',okText:'ลบรายการ'}).then(ok=>{
+                if (!ok) return;
+                const updatedTasks = draft.tasks.filter((_, i) => i !== tIdx);
+                if (updatedTasks.length === 0) {
+                    // ถ้าไม่เหลือ task แล้ว ลบ draft ทั้งหมดของวันนั้น
+                    deleteDraftForDate(ds);
+                } else {
+                    saveDraftForDate(ds, { ...draft, tasks: updatedTasks });
+                }
+                renderCalendar();
+                renderDayLogs(ds);
+                const logDate = document.getElementById('date')?.value;
+                if (logDate && isSameDate(logDate, ds)) { loadDraftOrPreviousLog(ds); checkDateStatus(ds); }
+            });
+        }
 
         // Open history modal: show cached data instantly, then fetch fresh data in background
         function openHistoryModal() {
