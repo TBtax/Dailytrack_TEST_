@@ -2081,6 +2081,11 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', () => el.classList.remove('border-red-400', 'bg-red-50'));
             });
+            // ตรวจจับเมื่อผู้ใช้แก้ไขเหตุผลเอง → ไม่ override อีก
+            const qlReasonEl = document.getElementById('ql_leave_reason');
+            if (qlReasonEl) {
+                qlReasonEl.addEventListener('input', () => { window._leaveReasonManualEdit = true; });
+            }
         });
 
         // ============================================================
@@ -2163,6 +2168,27 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             return days;
         }
 
+        // ── Auto-fill leave reason ──────────────────────────────────────────
+        function _autoFillLeaveReason() {
+            const typeEl   = document.getElementById('ql_leave_type');
+            const catEl    = document.getElementById('ql_leave_category');
+            const reasonEl = document.getElementById('ql_leave_reason');
+            if (!typeEl || !catEl || !reasonEl) return;
+            const typeVal = typeEl.value;
+            const catVal  = catEl.value;
+            if (window._leaveReasonManualEdit) return;
+            if (!typeVal || !catVal || catVal === 'ลาพักผ่อน') return;
+            const typeLabels = { Full: 'ลาเต็มวัน', Morning: 'ลาครึ่งวันเช้า (08.00-12.00)', Afternoon: 'ลาครึ่งวันบ่าย (13.00-17.00)', Hourly: 'ลาชั่วโมง' };
+            const typeLabel  = typeLabels[typeVal] || typeVal;
+            let text = `${catVal} - ${typeLabel}`;
+            if (typeVal === 'Hourly') {
+                const hrs  = parseInt(document.getElementById('ql_leave_hours')?.value  || 0);
+                const mins = parseInt(document.getElementById('ql_leave_minutes')?.value || 0);
+                text += ` - ${hrs}ชม. ${mins}นาที`;
+            }
+            reasonEl.value = text;
+        }
+
         function onQLLeaveTypeChange(sel) {
             const val = sel.value;
             const cat = document.getElementById('ql_leave_category');
@@ -2172,6 +2198,10 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                 cat.disabled = true; cat.value = '';
                 if(hoursRow) hoursRow.style.display = 'none';
                 if(reasonRow) reasonRow.style.display = 'flex';
+                // ล้าง auto-fill เมื่อยกเลิกการลา
+                const rEl = document.getElementById('ql_leave_reason');
+                if (rEl && !window._leaveReasonManualEdit) { rEl.value = ''; }
+                window._leaveReasonManualEdit = false;
             } else { 
                 cat.disabled = false;
                 // แสดง/ซ่อนแถว จน.ชม. เฉพาะลาชั่วโมง
@@ -2182,6 +2212,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             }
             // Sync SS for leave category (disabled state + display value)
             refreshSS('ql_leave_category');
+            _autoFillLeaveReason();
             updateQLDuration();
         }
         
@@ -2191,9 +2222,15 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if (sel.value === 'ลาพักผ่อน') {
                 if (reasonRow) reasonRow.style.display = 'flex';
                 if (reasonInput) { reasonInput.value = 'ลาพักผ่อน'; reasonInput.readOnly = true; reasonInput.style.background = '#F0FDF4'; reasonInput.style.color = '#4DA866'; reasonInput.style.fontWeight = '600'; }
+                window._leaveReasonManualEdit = false;
             } else {
                 if (reasonRow) reasonRow.style.display = 'flex';
-                if (reasonInput) { if (reasonInput.value === 'ลาพักผ่อน') reasonInput.value = ''; reasonInput.readOnly = false; reasonInput.style.background = ''; reasonInput.style.color = ''; reasonInput.style.fontWeight = ''; }
+                if (reasonInput) { 
+                    if (reasonInput.value === 'ลาพักผ่อน') { reasonInput.value = ''; }
+                    reasonInput.readOnly = false; reasonInput.style.background = ''; reasonInput.style.color = ''; reasonInput.style.fontWeight = ''; 
+                }
+                window._leaveReasonManualEdit = false;
+                _autoFillLeaveReason();
             }
             updateQLDuration();
         }
@@ -2268,6 +2305,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             if(trainingDays > 0) parts.push(`อบรม ${trainingDays} วัน`);
             if(fieldworkDays > 0) parts.push(`ลงพื้นที่ ${fieldworkDays} วัน`);
             display.textContent = parts.length > 0 ? parts.join(' | ') : '0 วัน 0 ชม.';
+            _autoFillLeaveReason();
         }
 
         async function submitQuickLog() {
@@ -2431,6 +2469,7 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             document.getElementById('ql_leave_reason').value = '';
             const _rInp = document.getElementById('ql_leave_reason');
             _rInp.readOnly = false; _rInp.style.background = ''; _rInp.style.color = ''; _rInp.style.fontWeight = '';
+            window._leaveReasonManualEdit = false;
             document.getElementById('ql_training_checkbox').checked = false;
             document.getElementById('ql_training_details').value = '';
             document.getElementById('ql_training_details').disabled = true;
@@ -4595,23 +4634,15 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
             // ── การลา ──────────────────────────────────────────────
             if (logObj.leaveCheckbox === 'Yes') {
                 body.appendChild(makeCard('🏖️ การลา', '#1D4ED8', '#DBEAFE', function(c) {
-                    const r1 = row2El(c);
                     // Detect swapped leaveType/leaveCategory (saved incorrectly from old log form)
                     const _dVals = ['Full','Morning','Afternoon','Hourly'];
                     const _cVals = ['ลาป่วย','ลากิจ','ลาพักผ่อน','ลาคลอด/ตรวจครรภ์','ลาเพื่อพัฒนาความรู้','อื่นๆ'];
                     const _lt = logObj.leaveType||'', _lc = logObj.leaveCategory||'';
                     let _dur = _lt, _cat = _lc;
                     if ((_cVals.includes(_lt) || _dVals.includes(_lc)) && !_dVals.includes(_lt)) { _dur = _lc; _cat = _lt; }
-                    fieldEl('ประเภทการลา', mkSel('eslm_leave_type', [
-                        {v:'',t:'-- เลือกประเภท --'},{v:'Full',t:'ลาเต็มวัน'},
-                        {v:'Morning',t:'ลาครึ่งวันเช้า (8.00-12.00)'},{v:'Afternoon',t:'ลาครึ่งวันบ่าย (13.00-17.00)'},
-                        {v:'Hourly',t:'ลาชั่วโมง'}
-                    ], _dur), r1);
-                    fieldEl('หมวดหมู่', mkSel('eslm_leave_cat', [
-                        {v:'',t:'-- เลือกหมวดหมู่ --'},{v:'ลาป่วย',t:'ลาป่วย'},{v:'ลากิจ',t:'ลากิจ'},
-                        {v:'ลาพักผ่อน',t:'ลาพักผ่อน'},{v:'ลาคลอด/ตรวจครรภ์',t:'ลาคลอด/ตรวจครรภ์'},
-                        {v:'ลาเพื่อพัฒนาความรู้',t:'ลาเพื่อพัฒนาความรู้'},{v:'อื่นๆ',t:'อื่นๆ'}
-                    ], _cat), r1);
+                    // เก็บค่าเดิมไว้เป็น hidden fields (ไม่แสดง dropdown)
+                    const hidType = document.createElement('input'); hidType.type='hidden'; hidType.id='eslm_leave_type'; hidType.value=_dur; c.appendChild(hidType);
+                    const hidCat  = document.createElement('input'); hidCat.type='hidden';  hidCat.id='eslm_leave_cat';  hidCat.value=_cat;  c.appendChild(hidCat);
                     const r2 = row2El(c);
                     fieldEl('วันที่เริ่มต้น', mkInp('eslm_leave_start', logObj.leaveStartDate||ds), r2);
                     fieldEl('วันที่สิ้นสุด', mkInp('eslm_leave_end', logObj.leaveEndDate||ds), r2);
@@ -4643,9 +4674,6 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     const r1 = row2El(c);
                     fieldEl('วันที่เริ่มอบรม', mkInp('eslm_training_start', logObj.trainingStartDate||ds), r1);
                     fieldEl('วันที่สิ้นสุด', mkInp('eslm_training_end', logObj.trainingEndDate||ds), r1);
-                    const r2 = row2El(c);
-                    fieldEl('เวลาเริ่ม', mkInp('eslm_training_start_time', logObj.trainingStartTime||'', 'เช่น 09:00'), r2);
-                    fieldEl('เวลาสิ้นสุด', mkInp('eslm_training_end_time', logObj.trainingEndTime||'', 'เช่น 17:00'), r2);
                 }));
             }
 
@@ -4656,9 +4684,6 @@ button[onclick="saveDraft()"] { border-color: var(--border) !important; color: v
                     const r1 = row2El(c);
                     fieldEl('วันที่เริ่ม', mkInp('eslm_fieldwork_start', logObj.fieldworkStartDate||ds), r1);
                     fieldEl('วันที่สิ้นสุด', mkInp('eslm_fieldwork_end', logObj.fieldworkEndDate||ds), r1);
-                    const r2 = row2El(c);
-                    fieldEl('เวลาเริ่ม', mkInp('eslm_fieldwork_start_time', logObj.fieldworkStartTime||'', 'เช่น 09:00'), r2);
-                    fieldEl('เวลาสิ้นสุด', mkInp('eslm_fieldwork_end_time', logObj.fieldworkEndTime||'', 'เช่น 17:00'), r2);
                 }));
             }
 
